@@ -172,7 +172,19 @@ function migrate(d,raw){// 入力の途中で閉じた時の印が残っとっ�
     const nm=new Set(d.ex.map(e=>norm(e.name)));
     ADD_EX.forEach(x=>{if(!nm.has(norm(x[1])))d.ex.push({id:'e'+(d.seq++),part:x[0],name:x[1]});});}
   d.ver=VER;try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}return d;}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){toast('保存できんかった（空き容量を確かめて）');}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){toast('保存できんかった（空き容量を確かめて）');}coachLater();}
+// ===== 専属コーチ班へ送る（記録を直すたびに中身まるごとを社長のオフィスへ。圏外なら次に開いた時に送る） =====
+const CKEY='kintore_coach',CURL='https://mado.fiveringstokyo.com/kintore/sync';
+function coach(){try{return JSON.parse(localStorage.getItem(CKEY))||{};}catch(e){return {};}}
+function coachPut(c){try{localStorage.setItem(CKEY,JSON.stringify(c));}catch(e){}}
+let coachT=0;
+function coachLater(){const c=coach();if(!c.key)return;c.dirty=1;coachPut(c);clearTimeout(coachT);coachT=setTimeout(coachSend,4000);}
+async function coachSend(force){const c=coach();if(!c.key||(!c.dirty&&!force))return;clearTimeout(coachT);
+  try{const r=await fetch(CURL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:c.key,data:D}),keepalive:JSON.stringify(D).length<60000});
+    const j=await r.json();const c2=coach();if(j.ok){c2.dirty=0;c2.last=j.at;c2.err='';}else c2.err=j.badkey?'合言葉がちがう':'受け取れんかった';coachPut(c2);return j.ok;}
+  catch(e){const c2=coach();c2.err='つながらん（あとで送る）';coachPut(c2);return false;}}
+addEventListener('online',()=>coachSend());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')coachSend();});
 function norm(s){return String(s).replace(/[\s・ー\-]/g,'').replace(/[ぁ-ん]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).toLowerCase();}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -422,12 +434,19 @@ function set(m){hdr('設定');const n=Object.keys(D.days).length;
   m.innerHTML=`<div class="form"><label><span>重さの単位</span><select id="un"><option value="kg">kg</option><option value="lbs">lbs（ポンド）</option></select></label>
    <label><span>休憩（秒）</span><input id="rs" inputmode="numeric" value="${D.rest}"></label></div>
    <div class="pad" style="color:#666;font-size:13px">記録はこのスマホの中だけにある（${n}日分）。機種変更やもしもの時のために、ときどき「控えを書き出す」でファイルに残して。<br><b>最後に控えを書き出した日：${D.lastBackup?md(D.lastBackup)+'（'+ago(D.lastBackup)+'）':'まだ無い'}</b></div>
+   <div class="pad" style="font-size:13px"><b>専属コーチ班に送る</b><br><span style="color:#666">記録を直すたびに、社長のオフィスのコーチ班へ自動で届く（圏外なら次に開いた時）。合言葉は一度入れたら覚えとく。</span></div>
+   <div class="form"><label><span>合言葉</span><input id="ck" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(coach().key||'')}" placeholder="kt-…"></label></div>
+   <div class="pad" id="cst" style="color:#666;font-size:13px">${coach().key?(coach().last?'最後に届いた：'+esc(coach().last):'まだ届いてない')+(coach().err?'　⚠'+esc(coach().err):''):'まだつないでない'}</div>
+   <button class="btn w" id="cs">いま送る</button>
    <button class="btn" id="ex">控えを書き出す（ファイル）</button><button class="btn w" id="im">控えから読み込む</button><input type="file" id="fi" accept=".json,application/json" style="display:none">`;
   $('#un').value=D.unit;$('#un').onchange=()=>{D.unit=$('#un').value;save();};$('#rs').onchange=()=>{D.rest=Math.max(10,parseInt($('#rs').value)||60);save();};
   $('#ex').onclick=async()=>{const txt=JSON.stringify(D);const name='kintore_'+today()+'.json';const file=new File([txt],name,{type:'application/json'});
     const done=()=>{D.lastBackup=today();save();render();};
     if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});done();return;}catch(e){if(e&&e.name==='AbortError')return;}}
     const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;a.click();done();};
+  $('#ck').onchange=()=>{const c=coach();c.key=$('#ck').value.trim();c.dirty=1;c.err='';coachPut(c);};
+  $('#cs').onclick=async()=>{const c=coach();c.key=$('#ck').value.trim();coachPut(c);if(!c.key){toast('合言葉を入れて');return;}
+    $('#cs').disabled=true;const ok=await coachSend(true);toast(ok?'コーチ班に届いた':'⚠'+(coach().err||'送れんかった'));render();};
   $('#im').onclick=()=>$('#fi').click();
   $('#fi').onchange=async()=>{const f=$('#fi').files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!d.ex||!d.days)throw 0;
     if(confirm('今の記録を、この控えの中身に入れ替える？')){localStorage.setItem(KEY+'_before_import',JSON.stringify(D));D=migrate(d,null);save();toast('読み込んだ');render();}}catch(e){toast('この控えは読めん');}};}
@@ -436,6 +455,7 @@ function set(m){hdr('設定');const n=Object.keys(D.days).length;
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
+coachSend();
 </script>
 </body>
 </html>
