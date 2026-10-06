@@ -369,7 +369,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
       <div class="stp"><button data-a="r-" data-i="${i}" aria-label="回数を減らす">−</button><input inputmode="numeric" data-f="r" data-i="${i}" value="${s.r}" placeholder="${cnt(e.id)}" style="width:40px"><button data-a="r+" data-i="${i}" aria-label="回数を増やす">＋</button></div>
       <button class="chk ${s.done?'on':''}" data-c="${i}" aria-label="できた">✓</button></div>`).join('')}
       <div class="setbtns"><button id="as">＋ セットを足す</button><button id="rs">最後のセットを消す</button></div></div>
-    <div class="hint">✓ を押すと休憩タイマーが動く（押さんでも記録は残る）</div>
+    <div class="hint">✓ を押すと休憩タイマーが動いて、次のセットが足される（使わんかった分は保存の時に消える）</div>
     ${todayMax?`<div class="maxl">推定MAX（1回だけ挙がる重さの目安）　${dl} <b>${f1(kg2(todayMax))}${D.unit}</b>${best.v?`／${d===today()?'これまで':'ほかの日'}の一番 ${f1(kg2(best.v))}${D.unit}`:''}</div>`:''}
     <div style="height:8px"></div>`;
     act(`<button class="btn w" id="nx">次の種目へ</button><button class="btn" id="dn">保存して戻る</button>`);
@@ -379,18 +379,21 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     $('#ts').onclick=()=>{TM.iv?stopT():startT();draw();};
     const follow=(i,f,old)=>{for(let j=i+1;j<it.sets.length;j++){const x=it.sets[j];if(x.done||String(x[f])!==String(old))break;x[f]=it.sets[i][f];}};
     m.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.i,s=it.sets[i],f=inp.dataset.f,old=s[f];const v=parseFloat(String(inp.value).replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)));
-      if(f==='w')s.w=isNaN(v)||v<=0?'':Math.round(fromU(v)*100)/100;else s.r=isNaN(v)?'':Math.max(0,Math.round(v));follow(i,f,old);commit();draw();});
+      if(f==='w')s.w=isNaN(v)||v<=0?'':Math.round(fromU(v)*100)/100;else s.r=isNaN(v)?'':Math.max(0,Math.round(v));delete s.auto;follow(i,f,old);commit();draw();});
     m.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,s=it.sets[i];const a=b.dataset.a,f=a[0],old=s[f];
       if(f==='w'){const st=D.unit==='lbs'?5:1.25;let v=kg2(+s.w||0)+(a[1]==='+'?st:-st);v=Math.round(fromU(v)*100)/100;s.w=v>0?v:'';}
-      else s.r=Math.max(0,(+s.r||0)+(a[1]==='+'?1:-1));follow(i,f,old);commit();draw();});
-    m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const i=+b.dataset.c,s=it.sets[i];s.done=!s.done;commit();if(s.done){startT();checkPR(s);toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
+      else s.r=Math.max(0,(+s.r||0)+(a[1]==='+'?1:-1));delete s.auto;follow(i,f,old);commit();draw();});
+    m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const i=+b.dataset.c,s=it.sets[i];s.done=!s.done;delete s.auto;
+      if(s.done&&i===it.sets.length-1)it.sets.push({w:s.w,r:s.r,done:false,auto:1});
+      if(!s.done&&i===it.sets.length-2&&it.sets[i+1].auto)it.sets.pop();
+      commit();if(s.done){startT();checkPR(s);toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
     $('#rs').onclick=()=>{if(it.sets.length<=1){toast('これ以上は消せん');return;}it.sets.pop();commit();draw();};
     $('#as').onclick=()=>{const l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});commit();draw();};
     $('#dn').onclick=()=>{commit();back();};
     $('#nx').onclick=()=>{commit();back();if(ST.v!=='day')go('day',{d});go('pick',{d});};};
   const commit=()=>{delete it._new;save();};
   // 画面を離れる時：回数の無いセットは残さん。触っとらん新しい種目も残さん
-  const cleanup=()=>{const wasNew=it._new;it.sets=it.sets.filter(s=>s.r!==''&&+s.r>0);if(wasNew||!it.sets.length){D.days[d]=(D.days[d]||[]).filter(x=>x!==it);}
+  const cleanup=()=>{const wasNew=it._new;it.sets=it.sets.filter(s=>s.r!==''&&+s.r>0&&!s.auto);if(wasNew||!it.sets.length){D.days[d]=(D.days[d]||[]).filter(x=>x!==it);}
     delete it._new;if(D.days[d]&&!D.days[d].length)delete D.days[d];save();
     if(!wasNew&&it.sets.length)toast(e.name+' を保存した');};
   ST.leave=cleanup;
