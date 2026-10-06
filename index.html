@@ -56,7 +56,7 @@ nav svg{width:24px;height:24px}
 .sum4 b{font-size:16px}
 .setrow{display:flex;align-items:center;gap:4px;padding:6px 8px;border-top:1px solid var(--line)}
 .setrow:first-child{border-top:0}
-.setrow.dn{background:#fff5f5}
+.setrow.dn{background:#ffe3e3}
 .setrow .no{width:18px;color:var(--mut);font-weight:700;text-align:center}
 .stp{display:flex;align-items:center;background:var(--bg);border-radius:8px}
 .stp button{width:44px;height:48px;font-size:24px;color:var(--r)}
@@ -74,6 +74,7 @@ nav svg{width:24px;height:24px}
 .tbar{display:flex;align-items:center;gap:6px;padding:4px 10px;background:#fff}
 .tbar .tim{flex:1;display:flex;align-items:center;gap:6px}
 .tbar .tim b{font-size:22px;min-width:52px;text-align:center;font-variant-numeric:tabular-nums}
+.tbar.run{background:var(--r)}.tbar.run .tim b{color:#fff;font-size:30px}.tbar.run .tim svg{stroke:#fff}
 .pill{border:1.5px solid var(--r);color:var(--r);border-radius:999px;padding:0 12px;font-weight:700;background:#fff;min-height:44px;min-width:56px}
 .pill.f{background:var(--r);color:#fff}
 .setbtns{display:flex;border-top:1px solid var(--line)}
@@ -359,7 +360,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
   let pr=ST.pr||null;
   const dl=d===today()?'今日':'この日';const hasHist=Object.keys(D.days).some(k=>k!==d&&D.days[k].some(x=>x.ex===e.id));
   const draw=()=>{const best=bestSet(e.id,d);const todayMax=isSec(e.id)?0:Math.max(0,...it.sets.map(s=>rm(+s.w,+s.r)));
-    m.innerHTML=`<div class="tbar"><div class="tim"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e52b2f" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+    m.innerHTML=`<div class="tbar ${TM.iv?'run':''}"><div class="tim"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e52b2f" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
       <b id="tb">${mmss(TM.iv?tLeft():D.rest)}</b><button class="pill" id="tm">−15秒</button><button class="pill" id="tp">＋15秒</button></div><button class="pill f" id="ts">${TM.iv?'止める':'休憩'}</button></div>
     ${pr?`<div class="prb">🏆 <b>自己ベスト更新！</b><br>${dl} <b>${setTxt(pr.s,e.id)}</b>（これまでの一番：${pr.b?setTxt(pr.b,e.id)+'・'+md(pr.d):'なし'}）</div>`:''}
     ${prev||hasHist?`<div class="last">${prev?`<b>前回 ${md(prev.d)}（${ago(prev.d)}）</b><br>${grp(prev.it.sets,e.id)}`:''}${hasHist?`<button class="lnk" id="hx">これまでの記録 ›</button>`:''}</div>`:''}
@@ -382,7 +383,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     m.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,s=it.sets[i];const a=b.dataset.a,f=a[0],old=s[f];
       if(f==='w'){const st=D.unit==='lbs'?5:1.25;let v=kg2(+s.w||0)+(a[1]==='+'?st:-st);v=Math.round(fromU(v)*100)/100;s.w=v>0?v:'';}
       else s.r=Math.max(0,(+s.r||0)+(a[1]==='+'?1:-1));follow(i,f,old);commit();draw();});
-    m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const s=it.sets[+b.dataset.c];s.done=!s.done;commit();if(s.done){startT();checkPR(s);}draw();});
+    m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const i=+b.dataset.c,s=it.sets[i];s.done=!s.done;commit();if(s.done){startT();checkPR(s);toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
     $('#rs').onclick=()=>{if(it.sets.length<=1){toast('これ以上は消せん');return;}it.sets.pop();commit();draw();};
     $('#as').onclick=()=>{const l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});commit();draw();};
     $('#dn').onclick=()=>{commit();back();};
@@ -397,7 +398,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
   draw();}
 function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
-  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);beep();}catch(e){}toast('休憩おわり');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
+  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);beep();}catch(e){}toast('休憩おわり');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
 function stopT(){clearInterval(TM.iv);TM.iv=null;}
 let AC=null;function audioOn(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}}
 function beep(){const c=AC;if(!c)return;[0,.35].forEach(t0=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.value=.2;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+.2);});}
