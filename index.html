@@ -17,6 +17,11 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 input{font:inherit}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
+/* パソコン版だけ＝右の広い所にフォーム解説の絵（社長 2026-10-08）。スマホの幅では出さん */
+#formv{display:none;position:fixed;top:0;right:0;bottom:0;left:440px;background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px}
+#formv img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;display:none}
+#formv .fm{font-size:20px;text-align:center;line-height:1.7}
+@media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#toast{left:220px}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
 header h1{flex:1;margin:0;font-size:18px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .hb{min-width:72px;min-height:44px;font-size:15px;color:#fff;padding:0 8px;display:flex;align-items:center}
@@ -146,6 +151,7 @@ svg.g{width:100%;height:170px}
     <button data-t="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>設定</button>
   </nav>
 </div>
+<aside id="formv"><img id="fimg" alt=""><div class="fm" id="fmsg"></div></aside>
 <div id="toast"></div>
 <script>
 'use strict';
@@ -267,7 +273,13 @@ function leaveAll(){leave();while(STACK.length){const s=STACK.pop();if(s.leave){
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{leaveAll();go(b.dataset.t,{},false);});
 function hdr(title,left,right){$('#ttl').textContent=title;const l=$('#hl');l.innerHTML=left?'‹ 戻る':'';l.onclick=left?back:null;$('#hr').innerHTML=right||'';
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===({day:'home',pick:'home',ex:'home',newex:'home',rmc:'home',exh:'hist'}[ST.v]||ST.v)));}
-function render(){stopFab();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);}
+function render(){stopFab();showForm();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);}
+// ===== フォーム解説の絵（パソコン版の右側）＝前に別の日にやった種目だけ出す。絵は専属コーチ班が form/ に置く =====
+let FORMS=null;fetch('form/index.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FORMS={};for(const k in j)FORMS[norm(k)]=j[k];if(ST&&ST.v==='ex')render();}).catch(()=>{FORMS={};});
+function showForm(name,has){const im=$('#fimg'),ms=$('#fmsg');if(!im)return;const f=name&&has&&FORMS&&FORMS[norm(name)];
+  if(f){im.src='form/'+f;im.alt=name+' のフォーム';im.style.display='block';ms.textContent='';return;}
+  im.style.display='none';im.removeAttribute('src');
+  ms.innerHTML=!name?'種目を開くと、ここにフォームの解説が出る<br><small>（前にやった種目だけ）</small>':has?esc(name)+' の解説は準備中<br><small>（次に記録が届いた時に作る）</small>':esc(name)+' は今日が初めて<br><small>次回からここにフォームの解説が出る</small>';}
 function act(h){const a=$('#act');a.innerHTML=h;a.style.display=h?'flex':'none';}
 let fabEl=null;function stopFab(){if(fabEl){fabEl.remove();fabEl=null;}}
 function fab(fn,label){fabEl=document.createElement('button');fabEl.className='fab';fabEl.textContent=label;fabEl.onclick=fn;document.body.appendChild(fabEl);}
@@ -358,7 +370,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
   const prev=lastDayOf(e.id,d);
   if(!it){it={ex:e.id,sets:prev?prev.it.sets.map(s=>({w:s.w,r:s.r,done:false})):[{w:'',r:'',done:false}]};D.days[d].push(it);it._new=true;}
   let pr=ST.pr||null;
-  const dl=d===today()?'今日':'この日';const hasHist=Object.keys(D.days).some(k=>k!==d&&D.days[k].some(x=>x.ex===e.id));
+  const dl=d===today()?'今日':'この日';const hasHist=Object.keys(D.days).some(k=>k!==d&&D.days[k].some(x=>x.ex===e.id));showForm(e.name,hasHist);
   const draw=()=>{const best=bestSet(e.id,d);const todayMax=isSec(e.id)?0:Math.max(0,...it.sets.map(s=>rm(+s.w,+s.r)));
     m.innerHTML=`<div class="tbar ${TM.iv?'run':''}"><div class="tim"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e52b2f" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
       <b id="tb">${mmss(TM.iv?tLeft():D.rest)}</b><button class="pill" id="tm">−15秒</button><button class="pill" id="tp">＋15秒</button></div><button class="pill f" id="ts">${TM.iv?'止める':'休憩'}</button></div>
