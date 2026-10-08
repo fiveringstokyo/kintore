@@ -1,6 +1,6 @@
 // 圏外のジムでも開けるように、画面を手元に置いとく（新しい版があれば次に開いた時に入れ替わる）
 // 画面を直したら C の版を上げる（古い置き場は activate で消す）
-const C='kintore-v9';
+const C='kintore-v10';
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','manifest.json','icon.png'])));self.skipWaiting();});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
