@@ -412,11 +412,19 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
   const checkPR=s=>{const bw=s.w===''||!+s.w;const b=bestSet(e.id,d,bw);const v=score(s,bw);const cur=Math.max(0,...it.sets.filter(x=>x!==s&&x.done).map(x=>score(x,bw)));
     if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
   draw();}
-function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
-  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);beep();}catch(e){}toast('休憩おわり');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
-function stopT(){clearInterval(TM.iv);TM.iv=null;}
+function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
+  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd)beep();TM.snd=null;}catch(e){}toast('休憩おわり');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
+function stopT(){clearInterval(TM.iv);TM.iv=null;if(TM.snd&&tLeft()>0){try{TM.snd.pause();}catch(e){}TM.snd=null;}}
 let AC=null;function audioOn(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}}
-function beep(){const c=AC;if(!c)return;[0,.35].forEach(t0=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.value=.2;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+.2);});}
+// 休憩の音は「無音＋最後にピピピ」の音声ファイルを✓を押した瞬間に流し始める
+// ＝iPhoneのマナーモードでも鳴る（Web Audioは消音スイッチで消える）・画面を消しても鳴る（タイマーの処理は止まるが音声は流れ続ける）
+let SNDA=null;function restSnd(sec){try{const R=8000,n=Math.max(1,Math.round(sec*R)),buf=new Uint8Array(44+n),v=new DataView(buf.buffer);
+  const W=(o,t)=>{for(let i=0;i<t.length;i++)buf[o+i]=t.charCodeAt(i);};W(0,'RIFF');v.setUint32(4,36+n,true);W(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,R,true);v.setUint32(28,R,true);v.setUint16(32,1,true);v.setUint16(34,8,true);W(36,'data');v.setUint32(40,n,true);buf.fill(128,44);
+  const st=Math.max(0,n-Math.round(1.6*R));for(let k=0;k<3;k++){const a=st+Math.round(k*.5*R),b=Math.min(n,a+Math.round(.3*R));for(let i=a;i<b;i++)buf[44+i]=128+Math.round(110*Math.sin(2*Math.PI*1000*(i-a)/R));}
+  if(SNDA&&SNDA.src)URL.revokeObjectURL(SNDA.src);SNDA=SNDA||new Audio();SNDA.src=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));SNDA.volume=1;
+  const p=SNDA.play();if(p&&p.catch)p.catch(()=>{TM.snd=null;});return SNDA;}catch(e){return null;}}
+function beep(){const c=AC;if(!c)return;[0,.35].forEach(t0=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.value=.6;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+.2);});}
 
 // ===== ふり返り（カレンダー・グラフ） =====
 let hM=null;
