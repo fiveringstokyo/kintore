@@ -56,6 +56,7 @@ nav svg{width:24px;height:24px}
 .row .n{flex:1}
 .row .m{color:var(--mut);font-size:12px}
 .sum4{display:flex;gap:6px;padding:8px;background:var(--r)}
+.tmb{display:flex;align-items:center;gap:10px;margin:10px 10px 0;padding:10px 14px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}.tmb div{flex:1}.tmb small{display:block;font-size:11px;color:var(--mut)}.tmb b{font-size:26px;color:var(--r);font-variant-numeric:tabular-nums}.tmb button{padding:12px 18px;border-radius:10px;background:#333;color:#fff;font-weight:700;font-size:16px}
 .sum4 div{flex:1;background:#fff;color:var(--r);border-radius:6px;text-align:center;padding:4px 0}
 .sum4 small{display:block;font-size:10px;color:var(--mut)}
 .sum4 b{font-size:16px}
@@ -220,6 +221,8 @@ function mergeData(a,b){const d=JSON.parse(JSON.stringify(a));let changed=false;
     theirs.forEach(t=>{const mine=d.days[day].find(x=>x.ex===t.ex);
       if(!mine){d.days[day].push(t);changed=true;return;}
       if(t.sets.length>mine.sets.length){mine.sets=t.sets;changed=true;}});}
+  for(const k in (b.tm||{})){const x=b.tm[k];d.tm=d.tm||{};const y=d.tm[k];if(!x||!x.s)continue;
+    if(!y){d.tm[k]=Object.assign({},x);changed=true;}else{const s0=Math.min(y.s,x.s),e0=Math.max(y.e||0,x.e||0);if(s0!==y.s||e0!==y.e){y.s=s0;y.e=e0;changed=true;}if(x.m&&!y.m){y.m=1;changed=true;}}}
   const bd=new Set((d.body||[]).map(x=>x.d));
   (b.body||[]).forEach(x=>{if(!bd.has(x.d)){d.body=d.body||[];d.body.push(x);bd.add(x.d);changed=true;}});
   if(d.body)d.body.sort((p,q)=>p.d<q.d?-1:1);
@@ -315,15 +318,35 @@ function home(m){hdr('筋トレ');const now=new Date();if(!calM)calM=new Date(no
   if($('#bk'))$('#bk').onclick=()=>{leaveAll();go('set',{},false);};
   $('#pm').onclick=()=>{calM=new Date(y,mo-1,1);render();};$('#nm').onclick=()=>{calM=new Date(y,mo+1,1);render();};
   // 今日まだ何も無い時は、そのまま種目選びへ（戻るとその日の画面）
-  $('#add').onclick=()=>{go('day',{d:td});if(!(D.days[td]||[]).length)go('pick',{d:td});};$('#rmb').onclick=()=>go('rmc');}
+  $('#add').onclick=()=>{if(!tmGet(td))tmStart(td);go('day',{d:td});if(!(D.days[td]||[]).length)go('pick',{d:td});};$('#rmb').onclick=()=>go('rmc');}
+
+// ===== 所要時間（スタート〜おわり）＝社長 10/09「毎回なるべく短時間で終わらせたい」 =====
+// D.tm[日付]={s:始めた時刻,e:終えた時刻,m:1=おわりを押した}。スタートを押し忘れたら最初の✓で始まる・おわりを押し忘れたら最後の✓が終わり
+function tmGet(d){return (D.tm||{})[d];}
+function tmStart(d){D.tm=D.tm||{};D.tm[d]={s:Date.now(),e:Date.now()};save();}
+function tmTick(d){D.tm=D.tm||{};const t=D.tm[d],n=Date.now();if(!t){D.tm[d]={s:n,e:n};return;}t.e=n;delete t.m;}
+function tmEnd(d){const t=tmGet(d);if(!t)return;t.e=Date.now();t.m=1;save();}
+function tmLen(t){return t&&t.e>t.s?t.e-t.s:0;}
+function hm(ms){const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+'時間'+(m%60)+'分':m+'分';}
+function hms(ms){const x=Math.max(0,Math.floor(ms/1000)),h=Math.floor(x/3600);return (h?h+':'+pad(Math.floor(x/60)%60):Math.floor(x/60))+':'+pad(x%60);}
+function tmPrev(d){const ks=Object.keys(D.tm||{}).filter(k=>k<d&&tmLen(D.tm[k])>=60000).sort();return ks.length?D.tm[ks[ks.length-1]]:null;}
+function tmBest(d){let b=0;for(const k in D.tm||{}){if(k===d)continue;const l=tmLen(D.tm[k]);if(l>=60000&&(!b||l<b))b=l;}return b;}
+function tmBar(d){const t=tmGet(d),isT=d===today();
+  if(!t)return isT?'<button class="btn" id="tms" style="background:var(--g)">▶ スタート（所要時間を測る）</button>':'';
+  const run=isT&&!t.m,l=run?Date.now()-t.s:tmLen(t),p=tmPrev(d),b=tmBest(d);let sub='';
+  if(p){const df=Math.round((l-tmLen(p))/60000);sub='前回 '+hm(tmLen(p))+(run?'':'（'+(df>0?'+'+df:df)+'分）');}
+  if(b)sub+=(sub?'／':'')+'いちばん短い '+hm(b);
+  return `<div class="tmb"><div><small>${run?'経過（スタートから）':'所要時間'}</small><b id="tmv">${run?hms(l):hm(l)}</b>${sub?`<small>${sub}</small>`:''}</div>${run?'<button id="tme">■ おわり</button>':''}</div>`;}
+setInterval(()=>{const v=document.getElementById('tmv');if(!v||ST.v!=='day'||ST.d!==today())return;const t=tmGet(ST.d);if(t&&!t.m)v.textContent=hms(Date.now()-t.s);},1000);
 
 // ===== その日の記録 =====
 function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
   let sets=0,reps=0,v=0,sec=0;L.forEach(x=>{v+=xVol(x);x.sets.forEach(s=>{sets++;if(!isSec(x.ex))reps+=+s.r||0;else sec+=+s.r||0;});});
-  m.innerHTML=`<div class="sum4"><div><small>種目</small><b>${L.length}</b></div><div><small>セット</small><b>${sets}</b></div><div><small>回数</small><b>${reps}</b></div>${!v&&sec?`<div><small>秒数</small><b>${sec}</b></div>`:`<div><small>総重量 ${D.unit}</small><b>${Math.round(kg2(v))}</b></div>`}</div>
+  m.innerHTML=`<div class="sum4"><div><small>種目</small><b>${L.length}</b></div><div><small>セット</small><b>${sets}</b></div><div><small>回数</small><b>${reps}</b></div>${!v&&sec?`<div><small>秒数</small><b>${sec}</b></div>`:`<div><small>総重量 ${D.unit}</small><b>${Math.round(kg2(v))}</b></div>`}</div>${tmBar(d)}
    <div class="pad">${L.length?L.map((x,i)=>{const e=exById(x.ex)||{name:'?'};return `<div class="card"><h3 data-i="${i}">${esc(e.name)}<small>なおす ›</small></h3>${x.sets.map((s,j)=>`<div class="row"><span class="m">${j+1}</span><span class="n">${setTxt(s,x.ex)}</span></div>`).join('')}</div>`;}).join('')
    :'<div class="empty">この日の記録はまだ無い</div><button class="btn" id="addx" style="width:100%;margin:0">＋ 種目を足す</button>'}</div>`;
   m.querySelectorAll('h3[data-i]').forEach(h=>h.onclick=()=>go('ex',{d,ex:L[+h.dataset.i].ex}));
+  if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');render();};if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));render();};
   if($('#addx'))$('#addx').onclick=()=>go('pick',{d});else fab(()=>go('pick',{d}),'＋ 種目を足す');}
 
 // ===== 種目を選ぶ（最近やった部位が上・検索あり） =====
@@ -397,6 +420,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
       if(f==='w'){const st=D.unit==='lbs'?5:1.25;let v=kg2(+s.w||0)+(a[1]==='+'?st:-st);v=Math.round(fromU(v)*100)/100;s.w=v>0?v:'';}
       else s.r=Math.max(0,(+s.r||0)+(a[1]==='+'?1:-1));delete s.auto;follow(i,f,old);commit();draw();});
     m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const i=+b.dataset.c,s=it.sets[i];s.done=!s.done;delete s.auto;
+      if(s.done)tmTick(d);
       if(s.done&&i===it.sets.length-1)it.sets.push({w:s.w,r:s.r,done:false,auto:1});
       if(!s.done&&i===it.sets.length-2&&it.sets[i+1].auto)it.sets.pop();
       commit();if(s.done){startT();checkPR(s);toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
