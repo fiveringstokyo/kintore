@@ -27,10 +27,11 @@ const MAP=[
 // 名前で見つからん新しい種目は、アプリの「部位」で決める
 const PART={'胸':{chest:1,deltF:.3,triceps:.3},'背中':{lat:1,biceps:.3,trap:.3},'肩':{deltS:1,deltF:.5},'腕':{biceps:.7,triceps:.7},'腹':{abs:1,oblique:.4},'脚':{quad:1,ham:.6,glute:.4},'尻':{glute:1,ham:.3}};
 export function hits(e,norm){const n=norm(e.name);for(const [k,v] of MAP)if(n.includes(norm(k)))return v;return PART[e.part]||{};}
-// 月（'YYYY-MM'）のセット数を筋肉ごとに数える
-export function tally(D,ym,norm){const t={},by={};for(const k in MUS){t[k]=0;by[k]={};}
-  for(const d in D.days){if(!d.startsWith(ym))continue;for(const x of D.days[d]){const e=D.ex.find(y=>y.id===x.ex);if(!e)continue;
-    const n=x.sets.filter(s=>+s.r>0).length;if(!n)continue;const h=hits(e,norm);
+// リセットしてから今までのセット数を筋肉ごとに数える（社長 10/12「リセットボタンを押すまで蓄積」）
+// R＝D.musR＝{d:リセットした日,base:{種目id:その日リセット時点で入っとったセット数}}・無ければ記録の最初から全部
+export function tally(D,R,norm){const t={},by={};for(const k in MUS){t[k]=0;by[k]={};}
+  for(const d in D.days){if(R&&d<R.d)continue;for(const x of D.days[d]){const e=D.ex.find(y=>y.id===x.ex);if(!e)continue;
+    let n=x.sets.filter(s=>+s.r>0).length;if(R&&d===R.d)n-=((R.base||{})[x.ex]||0);if(n<=0)continue;const h=hits(e,norm);
     for(const k in h){t[k]+=n*h[k];by[k][e.name]=(by[k][e.name]||0)+n*h[k];}}}
   return {t,by};}
 
