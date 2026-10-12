@@ -277,7 +277,7 @@ function leaveAll(){leave();while(STACK.length){const s=STACK.pop();if(s.leave){
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{leaveAll();go(b.dataset.t,{},false);});
 function hdr(title,left,right){$('#ttl').textContent=title;const l=$('#hl');l.innerHTML=left?'‹ 戻る':'';l.onclick=left?back:null;$('#hr').innerHTML=right||'';
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===({day:'home',pick:'home',ex:'home',newex:'home',rmc:'home',exh:'hist'}[ST.v]||ST.v)));}
-function render(){stopFab();showForm();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);}
+function render(){stopFab();showForm();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);musFill();}
 // ===== フォーム解説の絵（パソコン版の右側）＝前に別の日にやった種目だけ出す。絵は専属コーチ班が form/ に置く =====
 let FORMS=null;fetch('form/index.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FORMS={};for(const k in j)FORMS[norm(k)]=j[k];if(ST&&ST.v==='ex')render();}).catch(()=>{FORMS={};});
 function showForm(name,has){const im=$('#fimg'),ms=$('#fmsg');if(!im)return;const f=name&&has&&FORMS&&FORMS[norm(name)];
@@ -342,7 +342,7 @@ setInterval(()=>{const v=document.getElementById('tmv');if(!v||ST.v!=='day'||ST.
 // ===== その日の記録 =====
 function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
   let sets=0,reps=0,v=0,sec=0;L.forEach(x=>{v+=xVol(x);x.sets.forEach(s=>{sets++;if(!isSec(x.ex))reps+=+s.r||0;else sec+=+s.r||0;});});
-  m.innerHTML=`<div class="sum4"><div><small>種目</small><b>${L.length}</b></div><div><small>セット</small><b>${sets}</b></div><div><small>回数</small><b>${reps}</b></div>${!v&&sec?`<div><small>秒数</small><b>${sec}</b></div>`:`<div><small>総重量 ${D.unit}</small><b>${Math.round(kg2(v))}</b></div>`}</div>${tmBar(d)}
+  m.innerHTML=`<div class="sum4"><div><small>種目</small><b>${L.length}</b></div><div><small>セット</small><b>${sets}</b></div><div><small>回数</small><b>${reps}</b></div>${!v&&sec?`<div><small>秒数</small><b>${sec}</b></div>`:`<div><small>総重量 ${D.unit}</small><b>${Math.round(kg2(v))}</b></div>`}</div>${tmBar(d)}${musMini()}
    <div class="pad">${L.length?L.map((x,i)=>{const e=exById(x.ex)||{name:'?'};return `<div class="card"><h3 data-i="${i}">${esc(e.name)}<small>なおす ›</small></h3>${x.sets.map((s,j)=>`<div class="row"><span class="m">${j+1}</span><span class="n">${setTxt(s,x.ex)}</span></div>`).join('')}</div>`;}).join('')
    :'<div class="empty">この日の記録はまだ無い</div><button class="btn" id="addx" style="width:100%;margin:0">＋ 種目を足す</button>'}</div>`;
   m.querySelectorAll('h3[data-i]').forEach(h=>h.onclick=()=>go('ex',{d,ex:L[+h.dataset.i].ex}));
@@ -407,7 +407,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
       <div class="setbtns"><button id="as">＋ セットを足す</button><button id="rs">最後のセットを消す</button></div></div>
     <div class="hint">✓ を押すと休憩タイマーが動いて、次のセットが足される（使わんかった分は保存の時に消える）</div>
     ${todayMax?`<div class="maxl">推定MAX（1回だけ挙がる重さの目安）　${dl} <b>${f1(kg2(todayMax))}${D.unit}</b>${best.v?`／${d===today()?'これまで':'ほかの日'}の一番 ${f1(kg2(best.v))}${D.unit}`:''}</div>`:''}
-    <div style="height:8px"></div>`;
+    ${musMini()}<div style="height:8px"></div>`;musFill();
     act(`<button class="btn w" id="nx">次の種目へ</button><button class="btn" id="dn">保存して戻る</button>`);
     if($('#hx'))$('#hx').onclick=()=>go('exh',{ex:e.id});
     $('#tm').onclick=()=>{D.rest=Math.max(15,D.rest-15);if(TM.iv)TM.end=Math.max(Date.now()+1000,TM.end-15000);save();draw();};
@@ -473,12 +473,17 @@ function hist(m){hdr('ふり返り');const mode=ST.mode||'cal',part=ST.part||'AL
     m.innerHTML=html;m.querySelectorAll('.gbox[data-ex]').forEach(g=>g.onclick=()=>go('exh',{ex:g.dataset.ex}));}
   m.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ST.part=b.dataset.p;render();});
   m.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ST.mode=b.dataset.m;render();});}
+// ===== 筋肉の温度（小さい図）＝その日の画面と種目の画面にいつも出す（社長 10/12「常にトレーニングの画面に表示」）。今月のぶん・押すと大きい図へ =====
+let MUSMOD=null;
+function musMini(){return `<div id="mmini" style="background:#fff;margin:8px 10px 0;border-radius:10px;padding:6px 4px 4px;cursor:pointer"><div style="display:flex;justify-content:space-between;font-size:12px;color:#777;padding:0 8px"><span>🌡 今月の筋肉の温度</span><span>青＝まだ／赤＝たくさん ›</span></div><div id="mmi" style="min-height:120px"></div></div>`;}
+function musFill(){const go2=M=>{MUSMOD=M;const el=$('#mmi');if(!el||el.dataset.ok)return;el.dataset.ok=1;el.innerHTML=M.svg(M.tally(D,today().slice(0,7),norm).t,true);
+  $('#mmini').onclick=()=>{muM=null;go('hist',{mode:'mus'});};};if(!$('#mmi'))return;MUSMOD?go2(MUSMOD):import('./muscle.js').then(go2).catch(()=>{});}
 // ===== 筋肉マップ（正面・背面の平面図。その月に鍛えた筋肉が赤くなる・中身は muscle.js） =====
 let muM=null;
 function musV(m,html){const n=new Date();if(!muM)muM=new Date(n.getFullYear(),n.getMonth(),1);const y=muM.getFullYear(),mo=muM.getMonth(),ym=y+'-'+pad(mo+1);
   m.innerHTML=html+`<div class="hcal" style="padding-bottom:4px"><div class="mh"><button id="p" aria-label="前の月">‹</button>${y}年${mo+1}月<button id="n" aria-label="次の月">›</button></div></div>
    <div style="background:#fff;margin:0 10px;border-radius:10px;padding:8px 6px 4px"><div id="m3t" style="text-align:center;font-weight:700;min-height:22px">読み込み中…</div><div id="m3"></div></div>
-   <div class="pad" style="padding-top:6px"><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#777"><span>0</span><span style="flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,#f1e4da,#d0786f,#b3000f)"></span><span>40セットで真っ赤</span></div>
+   <div class="pad" style="padding-top:6px"><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#777"><span>0＝青</span><span style="flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,#2f5bd8,#36b3e8,#f2d544,#f28a24,#c8001a)"></span><span>40セットで真っ赤</span></div>
     <div class="card" id="m3l" style="margin-top:8px"></div>
     <div class="note">筋肉を押すと名前とセット数が出る。主に効く筋肉は1セット＝1、補助で効く筋肉は0.3〜0.8セットで数える。月が変わると0から</div></div>`;
   $('#p').onclick=()=>{muM=new Date(y,mo-1,1);render();};$('#n').onclick=()=>{muM=new Date(y,mo+1,1);render();};

@@ -40,12 +40,15 @@ const SLUG={f:{chest:['chest'],obliques:['oblique'],abs:['abs'],biceps:['biceps'
  b:{trapezius:['trap'],deltoids:['deltR','deltS'],'upper-back':['lat'],triceps:['triceps'],'lower-back':['erector'],forearm:['fore'],gluteal:['glute'],
   adductors:['adduct'],hamstring:['ham'],calves:['calf']}};
 const mix=(a,b,v)=>'#'+[0,2,4].map(i=>Math.round(parseInt(a.substr(i,2),16)*(1-v)+parseInt(b.substr(i,2),16)*v).toString(16).padStart(2,'0')).join('');
-export function color(n){const v=Math.min(1,(n||0)/FULL);return v?mix('f1e4da','b3000f',.3+.7*v):'#f1e4da';}
+// 温度の色＝社長 10/12「鍛えるほど温度が上がる。低い所は青、負荷をかけるほど赤」＝0は青→水色→黄→橙→40セットで赤
+export const HEAT=['2f5bd8','36b3e8','f2d544','f28a24','c8001a'];
+// 最初の数セットで色が動くように平方根で曲げる（10セット＝水色と黄の間・20セット＝黄〜橙・40セット＝赤）
+export function color(n){const v=Math.sqrt(Math.min(1,(n||0)/FULL))*(HEAT.length-1),i=Math.min(HEAT.length-2,Math.floor(v));return mix(HEAT[i],HEAT[i+1],v-i);}
 // 押した所の名前とセット数（data-k＝'f:deltoids' の形）
 export function part(t,key){const [s,g]=key.split(':'),ks=(SLUG[s]||{})[g]||[];return {name:ks.map(k=>MUS[k]).join('＋'),n:ks.reduce((a,k)=>a+(t[k]||0),0)};}
-function fig(side,list,out,vb,t,label){const map=SLUG[side];
+function fig(side,list,out,vb,t,label,sm){const map=SLUG[side];
   const ps=list.map(([g,d])=>{const ks=map[g];if(!ks)return `<path d="${d}" fill="#c9cdd3"/>`;const n=ks.reduce((a,k)=>a+(t[k]||0),0);
     return `<path data-k="${side}:${g}" d="${d}" fill="${color(n)}" stroke="#fff" stroke-width="2"/>`;}).join('');
-  return `<div style="flex:1;max-width:230px;text-align:center"><svg viewBox="${vb}" style="width:100%;height:auto"><path d="${out}" fill="none" stroke="#9aa0a8" stroke-width="2"/>${ps}</svg>
-   <div style="font-size:13px;color:#777">${label}</div></div>`;}
-export function svg(t){return `<div style="display:flex;justify-content:center;gap:4px">${fig('f',FRONT,OUT_F,'0 0 724 1448',t,'正面')}${fig('b',BACK,OUT_B,'724 0 724 1448',t,'背面')}</div>`;}
+  return `<div style="flex:1;max-width:${sm?120:230}px;text-align:center"><svg viewBox="${vb}" style="width:100%;height:auto"><path d="${out}" fill="none" stroke="#9aa0a8" stroke-width="2"/>${ps}</svg>
+   <div style="font-size:${sm?11:13}px;color:#777">${label}</div></div>`;}
+export function svg(t,sm){return `<div style="display:flex;justify-content:center;gap:4px">${fig('f',FRONT,OUT_F,'0 0 724 1448',t,'正面',sm)}${fig('b',BACK,OUT_B,'724 0 724 1448',t,'背面',sm)}</div>`;}
