@@ -486,7 +486,7 @@ function musV(m,html){const n=new Date();if(!muM)muM=new Date(n.getFullYear(),n.
     const r1=x=>Math.round(x*10)/10,ks=Object.keys(M.MUS).sort((a,b)=>t[b]-t[a]);
     $('#m3l').innerHTML=ks.map(k=>`<div class="row" style="padding:7px 12px"><span class="n">${M.MUS[k]}${t[k]?`<br><span class="m">${Object.entries(by[k]).sort((a,b)=>b[1]-a[1]).map(([e,v])=>esc(e)+' '+r1(v)).join('・')}</span>`:''}</span><span style="white-space:nowrap;font-weight:700;color:${t[k]?'#b3000f':'#bbb'}">${r1(t[k])}セット</span></div>`).join('');
     const tt=$('#m3t'),idle=()=>{const z=ks.filter(k=>!t[k]).length;tt.textContent=ks.some(k=>t[k])?`いちばん鍛えた：${M.MUS[ks[0]]}${z?`／まだ0の筋肉 ${z}か所`:''}`:'この月はまだ記録が無い';};idle();
-    const box=$('#m3');box.innerHTML=M.svg(t);box.onclick=e=>{const k=e.target.dataset&&e.target.dataset.k;box.querySelectorAll('path[data-k]').forEach(p=>p.style.opacity=k&&p.dataset.k!==k?.45:1);if(!k)return idle();tt.textContent=`${M.MUS[k]}：${r1(t[k])}セット`;};
+    const box=$('#m3');box.innerHTML=M.svg(t);box.onclick=e=>{const k=e.target.dataset&&e.target.dataset.k;box.querySelectorAll('path[data-k]').forEach(p=>p.style.opacity=k&&p.dataset.k!==k?.45:1);if(!k)return idle();const q=M.part(t,k);tt.textContent=`${q.name}：${r1(q.n)}セット`;};
   }).catch(()=>{const tt=$('#m3t');if(tt)tt.textContent='読み込みに失敗（電波を確かめて開き直して）';});}
 // 種目ごとの伸び（重さがある種目は推定MAX、自重・秒の種目は1セットの最高回数・秒数）
 function exPts(e){const ks=Object.keys(D.days).sort().filter(k=>D.days[k].some(x=>x.ex===e.id));

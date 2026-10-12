@@ -1,4 +1,5 @@
-// ===== 筋肉マップ（正面・背面の平面図）＝社長 10/12「1か月トレーニングするたびに鍛えた筋肉が赤くなる」→同日「3Dがしょぼい。平面図に、正面・背面の」 =====
+import {FRONT,BACK,OUT_F,OUT_B} from "./body_svg.js";
+// ===== 筋肉マップ（正面・背面の平面図・拾ってきた筋肉図）＝社長 10/12「1か月トレーニングするたびに鍛えた筋肉が赤くなる」→同日「3Dがしょぼい。平面図に、正面・背面の」 =====
 // その月にやったセット数を筋肉ごとに数えて、多いほど赤を濃くする。主に効く筋肉は1セット＝1、補助で効く筋肉は0.3〜0.8で数える
 // 40セット（週10セット前後＝筋肥大の研究でよく使われる目安）で真っ赤になる
 export const FULL=40;
@@ -33,27 +34,18 @@ export function tally(D,ym,norm){const t={},by={};for(const k in MUS){t[k]=0;by[
     for(const k in h){t[k]+=n*h[k];by[k][e.name]=(by[k][e.name]||0)+n*h[k];}}}
   return {t,by};}
 
-// ===== 体の絵（正面・背面）。右半分だけ描いて左は鏡に写す。体の中心＝x100 =====
-const BASE='M100,50 L108,52 C110,60 114,64 124,68 L136,72 C140,90 140,110 138,124 C136,150 132,175 130,200 C136,214 140,226 140,240 C142,270 140,300 136,326 C138,350 138,380 132,408 L138,428 L112,430 L114,410 C108,380 106,350 108,330 C104,300 103,270 103,240 L100,240 Z '+
- 'M136,72 C154,70 164,86 162,108 C162,130 164,150 164,164 C168,190 168,215 160,232 L162,252 C158,262 147,262 145,252 L148,232 C142,212 140,190 142,166 C141,150 141,130 140,112 Z';
-const FORE='M146,168 C157,168 166,184 165,204 C163,218 158,228 154,232 L148,232 C142,214 140,188 146,168 Z';
-const FRONT=[['trap','M104,56 C110,62 120,67 132,71 L110,74 C106,68 104,62 104,56 Z'],['deltS','M136,71 C152,69 163,84 161,106 L154,110 C153,94 148,80 136,71 Z'],
- ['deltF','M133,74 C146,80 153,96 152,112 C143,110 135,100 130,88 C130,82 131,77 133,74 Z'],['chest','M102,78 C114,74 128,76 134,88 C140,100 138,114 128,120 C118,124 108,122 102,118 Z'],
- ['biceps','M146,116 C156,118 161,134 159,152 C157,162 151,166 147,162 C143,148 142,130 146,116 Z'],['fore',FORE],
- ['abs','M102,124 L119,124 C121,150 121,178 117,206 C111,214 106,216 102,216 Z'],['oblique','M122,124 C132,128 135,146 133,172 C131,190 126,200 120,206 C124,180 124,150 122,124 Z'],
- ['adduct','M104,232 C110,240 113,262 112,292 C107,282 104,262 104,244 Z'],['quad','M114,228 C124,220 136,226 139,246 C141,274 137,302 131,320 C125,328 116,327 113,318 C113,296 115,262 114,228 Z'],
- ['calf','M112,342 C119,338 128,342 130,362 C131,382 126,398 122,404 L117,404 C112,390 110,366 112,342 Z']];
-const BACK=[['trap','M100,54 C106,60 118,66 134,72 C124,82 110,100 100,124 Z'],['deltR','M135,72 C152,71 163,86 161,106 L153,110 C150,94 143,82 132,78 Z'],
- ['lat','M104,126 C112,110 122,98 134,92 C139,112 137,140 130,160 C120,176 110,186 104,190 Z'],['erector','M101,132 C104,140 108,150 108,160 C110,182 110,202 108,214 L101,214 Z'],
- ['triceps','M145,114 C155,116 161,132 159,152 C156,162 150,166 145,160 C142,142 141,126 145,114 Z'],['fore',FORE],
- ['glute','M101,218 C114,210 134,212 139,232 C142,250 134,264 120,266 C110,266 104,260 101,252 Z'],['ham','M106,272 C118,266 134,270 137,290 C139,304 135,316 129,324 L112,324 C108,306 104,288 106,272 Z'],
- ['calf','M110,340 C122,332 136,340 136,362 C136,380 130,392 124,396 L116,396 C110,384 108,360 110,340 Z']];
+// ===== 体の絵（正面・背面）＝body_svg.js（拾ってきた筋肉図）。絵の部位→この表の筋肉。肩は正面＝前＋横、背面＝後ろ =====
+const SLUG={f:{chest:['chest'],obliques:['oblique'],abs:['abs'],biceps:['biceps'],triceps:['triceps'],trapezius:['trap'],deltoids:['deltF','deltS'],
+  adductors:['adduct'],quadriceps:['quad'],calves:['calf'],forearm:['fore']},
+ b:{trapezius:['trap'],deltoids:['deltR','deltS'],'upper-back':['lat'],triceps:['triceps'],'lower-back':['erector'],forearm:['fore'],gluteal:['glute'],
+  adductors:['adduct'],hamstring:['ham'],calves:['calf']}};
 const mix=(a,b,v)=>'#'+[0,2,4].map(i=>Math.round(parseInt(a.substr(i,2),16)*(1-v)+parseInt(b.substr(i,2),16)*v).toString(16).padStart(2,'0')).join('');
 export function color(n){const v=Math.min(1,(n||0)/FULL);return v?mix('f1e4da','b3000f',.3+.7*v):'#f1e4da';}
-function fig(list,t,label,abs){const half=list.map(([k,d])=>`<path data-k="${k}" d="${d}" fill="${color(t[k])}"/>`).join('');
-  const lines=abs?'<path d="M102,148 H119 M102,172 H120 M102,196 H118" stroke="#fff" stroke-width="1.6" fill="none"/>':'';
-  const side=`<path d="${BASE}" fill="#c3c8cf"/>${half}${lines}`;
-  return `<svg viewBox="0 0 200 448" style="flex:1;max-width:240px;height:auto"><g stroke="#fff" stroke-width="1.4" stroke-linejoin="round">
-   <ellipse cx="100" cy="30" rx="19" ry="23" fill="#c3c8cf"/>${side}<g transform="translate(200,0) scale(-1,1)">${side}</g></g>
-   <text x="100" y="445" text-anchor="middle" font-size="14" fill="#777">${label}</text></svg>`;}
-export function svg(t){return `<div style="display:flex;justify-content:center;gap:4px">${fig(FRONT,t,'正面',1)}${fig(BACK,t,'背面')}</div>`;}
+// 押した所の名前とセット数（data-k＝'f:deltoids' の形）
+export function part(t,key){const [s,g]=key.split(':'),ks=(SLUG[s]||{})[g]||[];return {name:ks.map(k=>MUS[k]).join('＋'),n:ks.reduce((a,k)=>a+(t[k]||0),0)};}
+function fig(side,list,out,vb,t,label){const map=SLUG[side];
+  const ps=list.map(([g,d])=>{const ks=map[g];if(!ks)return `<path d="${d}" fill="#c9cdd3"/>`;const n=ks.reduce((a,k)=>a+(t[k]||0),0);
+    return `<path data-k="${side}:${g}" d="${d}" fill="${color(n)}" stroke="#fff" stroke-width="2"/>`;}).join('');
+  return `<div style="flex:1;max-width:230px;text-align:center"><svg viewBox="${vb}" style="width:100%;height:auto"><path d="${out}" fill="none" stroke="#9aa0a8" stroke-width="2"/>${ps}</svg>
+   <div style="font-size:13px;color:#777">${label}</div></div>`;}
+export function svg(t){return `<div style="display:flex;justify-content:center;gap:4px">${fig('f',FRONT,OUT_F,'0 0 724 1448',t,'正面')}${fig('b',BACK,OUT_B,'724 0 724 1448',t,'背面')}</div>`;}
