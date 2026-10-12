@@ -50,6 +50,7 @@ export function part(t,key){const [s,g]=key.split(':'),ks=(SLUG[s]||{})[g]||[];r
 function fig(side,list,out,vb,t,label,sm){const map=SLUG[side];
   const ps=list.map(([g,d])=>{const ks=map[g];if(!ks)return `<path d="${d}" fill="#c9cdd3"/>`;const n=ks.reduce((a,k)=>a+(t[k]||0),0);
     return `<path data-k="${side}:${g}" d="${d}" fill="${color(n)}" stroke="#fff" stroke-width="2"/>`;}).join('');
-  return `<div style="flex:1;max-width:${sm?120:230}px;text-align:center"><svg viewBox="${vb}" style="width:100%;height:auto"><path d="${out}" fill="none" stroke="#9aa0a8" stroke-width="2"/>${ps}</svg>
+  return `<div style="${sm?'flex:1;max-width:170px':'flex:1 1 300px;max-width:440px'};text-align:center"><svg viewBox="${vb}" style="width:100%;height:auto"><path d="${out}" fill="none" stroke="#9aa0a8" stroke-width="2"/>${ps}</svg>
    <div style="font-size:${sm?11:13}px;color:#777">${label}</div></div>`;}
-export function svg(t,sm){return `<div style="display:flex;justify-content:center;gap:4px">${fig('f',FRONT,OUT_F,'0 0 724 1448',t,'正面',sm)}${fig('b',BACK,OUT_B,'724 0 724 1448',t,'背面',sm)}</div>`;}
+// 体のまわりの余白を切った枠（体の範囲＝正面 x49〜679・背面 x769〜1399・y96〜1351）。大きい図はスマホ幅なら正面・背面を縦に並べて画面いっぱい（社長 10/12「大きめに。細かい筋肉が見えない」）
+export function svg(t,sm){return `<div style="display:flex;justify-content:center;gap:${sm?4:10}px;${sm?'':'flex-wrap:wrap'}">${fig('f',FRONT,OUT_F,'40 88 648 1272',t,'正面',sm)}${fig('b',BACK,OUT_B,'760 88 648 1272',t,'背面',sm)}</div>`;}
