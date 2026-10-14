@@ -319,14 +319,16 @@ function home(m){hdr('筋トレ');const now=new Date();if(!calM)calM=new Date(no
   if($('#bk'))$('#bk').onclick=()=>{leaveAll();go('set',{},false);};
   $('#pm').onclick=()=>{calM=new Date(y,mo-1,1);render();};$('#nm').onclick=()=>{calM=new Date(y,mo+1,1);render();};
   // 今日まだ何も無い時は、そのまま種目選びへ（戻るとその日の画面）
-  $('#add').onclick=()=>{if(!tmGet(td))tmStart(td);go('day',{d:td});if(!(D.days[td]||[]).length)go('pick',{d:td});};$('#rmb').onclick=()=>go('rmc');}
+  $('#add').onclick=()=>{go('day',{d:td});if(!(D.days[td]||[]).length)go('pick',{d:td});};$('#rmb').onclick=()=>go('rmc');}
 
 // ===== 所要時間（スタート〜おわり）＝社長 10/09「毎回なるべく短時間で終わらせたい」 =====
 // D.tm[日付]={s:始めた時刻,e:終えた時刻,m:1=おわりを押した}。スタートを押し忘れたら最初の✓で始まる・おわりを押し忘れたら最後の✓が終わり
+// ＋で種目を選んだだけでは始まらん・おわりの後の✓では動かん（社長 10/14「時間がおかしい」＝14:38の＋から測って2時間45分になっとった）
 function tmGet(d){return (D.tm||{})[d];}
 function tmStart(d){D.tm=D.tm||{};D.tm[d]={s:Date.now(),e:Date.now()};save();}
-function tmTick(d){D.tm=D.tm||{};const t=D.tm[d],n=Date.now();if(!t){D.tm[d]={s:n,e:n};return;}t.e=n;delete t.m;}
+function tmTick(d){D.tm=D.tm||{};const t=D.tm[d],n=Date.now();if(!t){D.tm[d]={s:n,e:n};return;}if(!t.m)t.e=n;}
 function tmEnd(d){const t=tmGet(d);if(!t)return;t.e=Date.now();t.m=1;save();}
+function tmClk(x){const t=new Date(x);return t.getHours()+':'+pad(t.getMinutes());}
 function tmLen(t){return t&&t.e>t.s?t.e-t.s:0;}
 function hm(ms){const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+'時間'+(m%60)+'分':m+'分';}
 function hms(ms){const x=Math.max(0,Math.floor(ms/1000)),h=Math.floor(x/3600);return (h?h+':'+pad(Math.floor(x/60)%60):Math.floor(x/60))+':'+pad(x%60);}
@@ -337,7 +339,7 @@ function tmBar(d){const t=tmGet(d),isT=d===today();
   const run=isT&&!t.m,l=run?Date.now()-t.s:tmLen(t),p=tmPrev(d),b=tmBest(d);let sub='';
   if(p){const df=Math.round((l-tmLen(p))/60000);sub='前回 '+hm(tmLen(p))+(run?'':'（'+(df>0?'+'+df:df)+'分）');}
   if(b)sub+=(sub?'／':'')+'いちばん短い '+hm(b);
-  return `<div class="tmb"><div><small>${run?'経過（スタートから）':'所要時間'}</small><b id="tmv">${run?hms(l):hm(l)}</b>${sub?`<small>${sub}</small>`:''}</div>${run?'<button id="tme">■ おわり</button>':''}</div>`;}
+  return `<div class="tmb"><div><small>${run?'経過（'+tmClk(t.s)+' スタートから）':'所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）'}</small><b id="tmv">${run?hms(l):hm(l)}</b>${sub?`<small>${sub}</small>`:''}</div>${run?'<button id="tme">■ おわり</button>':isT?'<button id="tmr" style="background:#999;font-size:13px;padding:8px 10px">測り直す</button>':''}</div>`;}
 setInterval(()=>{const v=document.getElementById('tmv');if(!v||ST.v!=='day'||ST.d!==today())return;const t=tmGet(ST.d);if(t&&!t.m)v.textContent=hms(Date.now()-t.s);},1000);
 
 // ===== その日の記録 =====
@@ -348,6 +350,7 @@ function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
    :'<div class="empty">この日の記録はまだ無い</div><button class="btn" id="addx" style="width:100%;margin:0">＋ 種目を足す</button>'}</div>`;
   m.querySelectorAll('h3[data-i]').forEach(h=>h.onclick=()=>go('ex',{d,ex:L[+h.dataset.i].ex}));
   if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');render();};if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));render();};
+  if($('#tmr'))$('#tmr').onclick=()=>{if(confirm('今日の時間を消して、スタートからやり直す？')){delete D.tm[d];save();render();}};
   if($('#addx'))$('#addx').onclick=()=>go('pick',{d});else fab(()=>go('pick',{d}),'＋ 種目を足す');}
 
 // ===== 種目を選ぶ（最近やった部位が上・検索あり） =====
