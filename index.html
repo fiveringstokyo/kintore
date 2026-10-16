@@ -351,8 +351,12 @@ setInterval(()=>{const v=document.getElementById('tmv');if(!v||ST.v!=='day'||ST.
 function felTick(){const f=document.getElementById('fel');if(!f||typeof D==='undefined')return;const t=tmGet(today());if(!t){f.style.display='none';return;}
   const run=!t.m;f.style.display='block';$('#fels').textContent=run?'経過（'+tmClk(t.s)+' スタートから）':'今日の所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）';$('#felv').textContent=run?hms(Date.now()-t.s):hm(tmLen(t));}
 setInterval(felTick,1000);
-// 右＝専属コーチとの会話。社内の会話窓（office.html?solo=）をそのまま使う＝このPCの本社サーバーから出す（パソコンの幅の時だけ読み込む）
-function coachOn(){const c=document.getElementById('coach');if(c&&!c.src&&innerWidth>=1000)c.src='http://localhost:8787/office.html?solo=trainer__main';}
+// 右＝専属コーチとの会話。社内の会話窓（office.html?solo=）をそのまま使う（パソコンの幅の時だけ読み込む）
+// パソコン版は本社から開く（http://localhost:8787/kin/）＝会話窓と同じ所なので埋め込める。github の方で開いた時は、本社の方へ案内する
+const ATHOME=location.pathname.startsWith('/kin/');
+function coachOn(){const c=document.getElementById('coach');if(!c||c.src||c.srcdoc||innerWidth<1000)return;
+  if(ATHOME)c.src='/office.html?solo=trainer__main';
+  else c.srcdoc='<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font:16px sans-serif;background:#f3f3f3;text-align:center;line-height:1.8">コーチとの会話は、本社から開いた時に出ます<br><a href="http://localhost:8787/kin/" target="_top" style="font-size:18px">本社の筋トレを開く</a></body>';}
 addEventListener('resize',coachOn);setTimeout(coachOn,0);
 
 // ===== その日の記録 =====
