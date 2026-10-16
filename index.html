@@ -18,10 +18,15 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 input{font:inherit}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 /* パソコン版だけ＝右の広い所にフォーム解説の絵（社長 2026-10-08）。スマホの幅では出さん */
-#formv{display:none;position:fixed;top:0;right:0;bottom:0;left:440px;background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px}
-#formv img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;display:none}
+/* 2026-10-16 社長「スマホ版は要らん・パソコン版だけ」＝真ん中＝縦長の絵＋経過時間／右＝専属コーチとの会話（社内の会話窓をそのまま埋め込む） */
+:root{--fw:calc((100vh - 100px) * 2 / 3 + 24px)}
+#formv{display:none;position:fixed;top:0;bottom:0;left:440px;width:var(--fw);background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:8px}
+#formv img{max-width:100%;min-height:0;flex:0 1 auto;max-height:100%;object-fit:contain;border-radius:8px;display:none}
+#fel{display:none;align-self:stretch;text-align:center;background:#0d1017;border-radius:8px;padding:6px 8px;color:#fff;font-variant-numeric:tabular-nums}
+#fel small{display:block;font-size:12px;color:#9aa0ab}#fel b{font-size:34px;letter-spacing:1px}
+#coach{display:none;position:fixed;top:0;left:calc(440px + var(--fw));border:0;border-left:1px solid #000;background:#fff;width:calc(100vw - 440px - var(--fw));height:100vh}
 #formv .fm{font-size:20px;text-align:center;line-height:1.7}
-@media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#toast{left:220px}}
+@media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#coach{display:block}#toast{left:220px}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
 header h1{flex:1;margin:0;font-size:18px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .hb{min-width:72px;min-height:44px;font-size:15px;color:#fff;padding:0 8px;display:flex;align-items:center}
@@ -153,7 +158,8 @@ svg.g{width:100%;height:170px}
     <button data-t="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>設定</button>
   </nav>
 </div>
-<aside id="formv"><img id="fimg" alt=""><div class="fm" id="fmsg"></div></aside>
+<aside id="formv"><div id="fel"><small id="fels"></small><b id="felv"></b></div><img id="fimg" alt=""><div class="fm" id="fmsg"></div></aside>
+<iframe id="coach" title="専属コーチとの会話" allow="local-network-access; microphone; clipboard-write"></iframe>
 <div id="toast"></div>
 <script>
 'use strict';
@@ -341,6 +347,13 @@ function tmBar(d){const t=tmGet(d),isT=d===today();
   if(b)sub+=(sub?'／':'')+'いちばん短い '+hm(b);
   return `<div class="tmb"><div><small>${run?'経過（'+tmClk(t.s)+' スタートから）':'所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）'}</small><b id="tmv">${run?hms(l):hm(l)}</b>${sub?`<small>${sub}</small>`:''}</div>${run?'<button id="tme">■ おわり</button>':isT?'<button id="tmr" style="background:#999;font-size:13px;padding:8px 10px">測り直す</button>':''}</div>`;}
 setInterval(()=>{const v=document.getElementById('tmv');if(!v||ST.v!=='day'||ST.d!==today())return;const t=tmGet(ST.d);if(t&&!t.m)v.textContent=hms(Date.now()-t.s);},1000);
+// 経過時間（パソコン版の真ん中の上）＝社長 10/16「トレーニングの経過時間を表示して」。今日スタートしとる間は秒まで動く・おわりの後は所要時間
+function felTick(){const f=document.getElementById('fel');if(!f||typeof D==='undefined')return;const t=tmGet(today());if(!t){f.style.display='none';return;}
+  const run=!t.m;f.style.display='block';$('#fels').textContent=run?'経過（'+tmClk(t.s)+' スタートから）':'今日の所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）';$('#felv').textContent=run?hms(Date.now()-t.s):hm(tmLen(t));}
+setInterval(felTick,1000);
+// 右＝専属コーチとの会話。社内の会話窓（office.html?solo=）をそのまま使う＝このPCの本社サーバーから出す（パソコンの幅の時だけ読み込む）
+function coachOn(){const c=document.getElementById('coach');if(c&&!c.src&&innerWidth>=1000)c.src='http://localhost:8787/office.html?solo=trainer__main';}
+addEventListener('resize',coachOn);setTimeout(coachOn,0);
 
 // ===== その日の記録 =====
 function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
@@ -414,8 +427,8 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     ${musMini()}<div style="height:8px"></div>`;musFill();
     act(`<button class="btn w" id="nx">次の種目へ</button><button class="btn" id="dn">保存して戻る</button>`);
     if($('#hx'))$('#hx').onclick=()=>go('exh',{ex:e.id});
-    $('#tm').onclick=()=>{D.rest=Math.max(15,D.rest-15);if(TM.iv)TM.end=Math.max(Date.now()+1000,TM.end-15000);save();draw();};
-    $('#tp').onclick=()=>{D.rest+=15;if(TM.iv)TM.end+=15000;save();draw();};
+    $('#tm').onclick=()=>{D.rest=Math.max(15,D.rest-15);if(TM.iv){TM.end=Math.max(Date.now()+1000,TM.end-15000);reSnd();}save();draw();};
+    $('#tp').onclick=()=>{D.rest+=15;if(TM.iv){TM.end+=15000;reSnd();}save();draw();};
     $('#ts').onclick=()=>{TM.iv?stopT():startT();draw();};
     const follow=(i,f,old)=>{for(let j=i+1;j<it.sets.length;j++){const x=it.sets[j];if(x.done||String(x[f])!==String(old))break;x[f]=it.sets[i][f];}};
     m.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.i,s=it.sets[i],f=inp.dataset.f,old=s[f];const v=parseFloat(String(inp.value).replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)));
@@ -441,19 +454,24 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
   const checkPR=s=>{const bw=s.w===''||!+s.w;const b=bestSet(e.id,d,bw);const v=score(s,bw);const cur=Math.max(0,...it.sets.filter(x=>x!==s&&x.done).map(x=>score(x,bw)));
     if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
   draw();}
-function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
+function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.p15=D.rest<=15;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
+  if(!TM.p15&&l<=15&&l>0){TM.p15=true;if(!TM.snd)beep(1);}
   if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd)beep();TM.snd=null;}catch(e){}toast('休憩おわり');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
+// 休憩中に±15秒した時は、音を残りの時間に合わせて作り直す（15秒前と0秒の音がずれんように）
+function reSnd(){const l=Math.max(0,(TM.end-Date.now())/1000);TM.snd=restSnd(l);TM.p15=l<=15;}
 function stopT(){clearInterval(TM.iv);TM.iv=null;if(TM.snd&&tLeft()>0){try{TM.snd.pause();}catch(e){}TM.snd=null;}}
 let AC=null;function audioOn(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}}
 // 休憩の音は「無音＋最後にピピピ」の音声ファイルを✓を押した瞬間に流し始める
 // ＝iPhoneのマナーモードでも鳴る（Web Audioは消音スイッチで消える）・画面を消しても鳴る（タイマーの処理は止まるが音声は流れ続ける）
-let SNDA=null;function restSnd(sec){try{const R=8000,n=Math.max(1,Math.round(sec*R)),buf=new Uint8Array(44+n),v=new DataView(buf.buffer);
+let SNDA=null;function restSnd(sec){try{const R=8000,n=Math.max(1,Math.round((sec+1.4)*R)),buf=new Uint8Array(44+n),v=new DataView(buf.buffer);
   const W=(o,t)=>{for(let i=0;i<t.length;i++)buf[o+i]=t.charCodeAt(i);};W(0,'RIFF');v.setUint32(4,36+n,true);W(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
   v.setUint32(24,R,true);v.setUint32(28,R,true);v.setUint16(32,1,true);v.setUint16(34,8,true);W(36,'data');v.setUint32(40,n,true);buf.fill(128,44);
-  const st=Math.max(0,n-Math.round(1.6*R));for(let k=0;k<3;k++){const a=st+Math.round(k*.5*R),b=Math.min(n,a+Math.round(.3*R));for(let i=a;i<b;i++)buf[44+i]=128+Math.round(110*Math.sin(2*Math.PI*1000*(i-a)/R));}
+  // 残り15秒＝短く2回（ピピッ）／残り0秒＝長く2回（ピーピーッ）＝社長 10/16。0秒の音は時間ぴったりから鳴り始める（そのぶん音声は1.4秒長い）
+  const tone=(t,len)=>{const a=Math.round(t*R),b=Math.min(n,a+Math.round(len*R));for(let i=a;i<b;i++)buf[44+i]=128+Math.round(110*Math.sin(2*Math.PI*1000*(i-a)/R));};
+  if(sec>15){tone(sec-15,.09);tone(sec-15+.16,.09);}tone(sec,.5);tone(sec+.75,.65);
   if(SNDA&&SNDA.src)URL.revokeObjectURL(SNDA.src);SNDA=SNDA||new Audio();SNDA.src=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));SNDA.volume=1;
   const p=SNDA.play();if(p&&p.catch)p.catch(()=>{TM.snd=null;});return SNDA;}catch(e){return null;}}
-function beep(){const c=AC;if(!c)return;[0,.35].forEach(t0=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.value=.6;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+.2);});}
+function beep(short){const c=AC;if(!c)return;(short?[[0,.09],[.16,.09]]:[[0,.5],[.75,.65]]).forEach(([t0,len])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=1000;o.connect(g);g.connect(c.destination);g.gain.value=.6;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+len);});}
 
 // ===== ふり返り（カレンダー・グラフ） =====
 let hM=null;
