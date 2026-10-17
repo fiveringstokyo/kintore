@@ -19,12 +19,13 @@ input{font:inherit}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 /* パソコン版だけ＝右の広い所にフォーム解説の絵（社長 2026-10-08）。スマホの幅では出さん */
 /* 2026-10-16 社長「スマホ版は要らん・パソコン版だけ」＝真ん中＝縦長の絵＋経過時間／右＝専属コーチとの会話（社内の会話窓をそのまま埋め込む） */
-:root{--fw:calc((100vh - 100px) * 2 / 3 + 24px)}
+/* 2026-10-17 社長「右の会話の幅を半分にして、真ん中を広く」＝会話＝前の幅の半分（360px以上）・真ん中＝残り全部 */
+:root{--cw:max(360px, calc((100vw - 440px - (100vh - 100px) * 2 / 3 - 24px) / 2));--fw:calc(100vw - 440px - var(--cw))}
 #formv{display:none;position:fixed;top:0;bottom:0;left:440px;width:var(--fw);background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:8px}
 #formv img{max-width:100%;min-height:0;flex:0 1 auto;max-height:100%;object-fit:contain;border-radius:8px;display:none}
 #fel{display:none;align-self:stretch;text-align:center;background:#0d1017;border-radius:8px;padding:6px 8px;color:#fff;font-variant-numeric:tabular-nums}
 #fel small{display:block;font-size:12px;color:#9aa0ab}#fel b{font-size:34px;letter-spacing:1px}
-#coach{display:none;position:fixed;top:0;left:calc(440px + var(--fw));border:0;border-left:1px solid #000;background:#fff;width:calc(100vw - 440px - var(--fw));height:100vh}
+#coach{display:none;position:fixed;top:0;left:calc(440px + var(--fw));border:0;border-left:1px solid #000;background:#fff;width:var(--cw);height:100vh}
 #formv .fm{font-size:20px;text-align:center;line-height:1.7}
 @media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#coach{display:block}#toast{left:220px}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
