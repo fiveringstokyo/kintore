@@ -1,8 +1,12 @@
 import {FRONT,BACK,OUT_F,OUT_B} from "./body_svg.js";
 // ===== 筋肉マップ（正面・背面の平面図・拾ってきた筋肉図）＝社長 10/12「1か月トレーニングするたびに鍛えた筋肉が赤くなる」→同日「3Dがしょぼい。平面図に、正面・背面の」 =====
 // その月にやったセット数を筋肉ごとに数えて、多いほど赤を濃くする。主に効く筋肉は1セット＝1、補助で効く筋肉は0.3〜0.8で数える
-// 40セット（週10セット前後＝筋肥大の研究でよく使われる目安）で真っ赤になる
-export const FULL=40;
+// 10/18 社長「間が空くと冷えて色が戻る。なるべく橙〜赤を保つようにしたい」＝温度は冷める
+// ・1セットの熱は4日で半分になる（半減期4日）＝1週間で3割・2週間で1割・3週間で3%（ほぼ青）
+//   3週間＝休みの区切りの目安（休みが長いほど筋力は落ちる＝Bosquet 2013 https://doi.org/10.1111/sms.12047 ／3週間の休みなら再開で取り戻せた＝Ogasawara 2013 https://doi.org/10.1007/s00421-012-2511-9 ）
+// ・温度10で真っ赤＝週10セットを2回に分けてやると6〜11を行き来＝橙〜赤を保てる（週10セット・週2回＝Schoenfeld 2017 https://pubmed.ncbi.nlm.nih.gov/27433992/ ・2016 https://pubmed.ncbi.nlm.nih.gov/27102172/ ）
+//   週1回にまとめると、やった直後は赤でも次の回の前には黄まで冷める＝間をあけずに回すほど色が保てる
+export const FULL=10,HALF=4;
 export const MUS={chest:'大胸筋',deltF:'肩の前（三角筋前部）',deltS:'肩の横（三角筋中部）',deltR:'肩の後ろ（三角筋後部）',trap:'僧帽筋（首〜背中の上）',lat:'広背筋（背中の横）',
   erector:'脊柱起立筋（背骨の両わき）',biceps:'力こぶ（上腕二頭筋）',triceps:'二の腕の裏（上腕三頭筋）',fore:'前腕',abs:'腹筋（腹直筋）',oblique:'わき腹（腹斜筋）',
   glute:'お尻（大臀筋）',quad:'太ももの前（大腿四頭筋）',ham:'太ももの裏（ハムストリング）',adduct:'内もも（内転筋）',calf:'ふくらはぎ'};
@@ -29,9 +33,12 @@ const PART={'胸':{chest:1,deltF:.3,triceps:.3},'背中':{lat:1,biceps:.3,trap:.
 export function hits(e,norm){const n=norm(e.name);for(const [k,v] of MAP)if(n.includes(norm(k)))return v;return PART[e.part]||{};}
 // リセットしてから今までのセット数を筋肉ごとに数える（社長 10/12「リセットボタンを押すまで蓄積」）
 // R＝D.musR＝{d:リセットした日,base:{種目id:その日リセット時点で入っとったセット数}}・無ければ記録の最初から全部
-export function tally(D,R,norm){const t={},by={};for(const k in MUS){t[k]=0;by[k]={};}
-  for(const d in D.days){if(R&&d<R.d)continue;for(const x of D.days[d]){const e=D.ex.find(y=>y.id===x.ex);if(!e)continue;
-    let n=x.sets.filter(s=>+s.r>0).length;if(R&&d===R.d)n-=((R.base||{})[x.ex]||0);if(n<=0)continue;const h=hits(e,norm);
+// 日が経った分だけ冷ます＝その日のセット数×0.5^(経った日数÷4)
+export function tally(D,R,norm,now){const t={},by={};for(const k in MUS){t[k]=0;by[k]={};}
+  const z=now?new Date(now):new Date(),t0=Date.UTC(z.getFullYear(),z.getMonth(),z.getDate());
+  for(const d in D.days){if(R&&d<R.d)continue;const age=Math.max(0,Math.round((t0-Date.UTC(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)))/864e5)),f=Math.pow(.5,age/HALF);
+    for(const x of D.days[d]){const e=D.ex.find(y=>y.id===x.ex);if(!e)continue;
+    let n=x.sets.filter(s=>+s.r>0).length;if(R&&d===R.d)n-=((R.base||{})[x.ex]||0);if(n<=0)continue;n*=f;const h=hits(e,norm);
     for(const k in h){t[k]+=n*h[k];by[k][e.name]=(by[k][e.name]||0)+n*h[k];}}}
   return {t,by};}
 
