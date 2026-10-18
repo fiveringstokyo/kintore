@@ -465,6 +465,8 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
   draw();}
 function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.p15=D.rest<=15;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
+  // 音声が途中で止められとったら（ほかの音・端末の都合）、その場で鳴らす音に切り替える＝社長 10/18「2回鳴らすのが効いてない」
+  if(TM.snd&&(TM.snd.paused||Math.abs(TM.snd.currentTime-(Date.now()-TM.sndAt)/1000)>1.5)){try{TM.snd.pause();}catch(e){}TM.snd=null;audioOn();}
   if(!TM.p15&&l<=15&&l>0){TM.p15=true;if(!TM.snd)beep(1);}
   if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd)beep();TM.snd=null;}catch(e){}toast('休憩おわり');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
 // 休憩中に±15秒した時は、音を残りの時間に合わせて作り直す（15秒前と0秒の音がずれんように）
@@ -473,15 +475,16 @@ function stopT(){clearInterval(TM.iv);TM.iv=null;if(TM.snd&&tLeft()>0){try{TM.sn
 let AC=null;function audioOn(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}}
 // 休憩の音は「無音＋最後にピピピ」の音声ファイルを✓を押した瞬間に流し始める
 // ＝iPhoneのマナーモードでも鳴る（Web Audioは消音スイッチで消える）・画面を消しても鳴る（タイマーの処理は止まるが音声は流れ続ける）
-let SNDA=null;function restSnd(sec){try{const R=8000,n=Math.max(1,Math.round((sec+1.4)*R)),buf=new Uint8Array(44+n),v=new DataView(buf.buffer);
+let SNDA=null;function restSnd(sec){try{const R=8000,n=Math.max(1,Math.round((sec+1.8)*R)),buf=new Uint8Array(44+n),v=new DataView(buf.buffer);
   const W=(o,t)=>{for(let i=0;i<t.length;i++)buf[o+i]=t.charCodeAt(i);};W(0,'RIFF');v.setUint32(4,36+n,true);W(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
   v.setUint32(24,R,true);v.setUint32(28,R,true);v.setUint16(32,1,true);v.setUint16(34,8,true);W(36,'data');v.setUint32(40,n,true);buf.fill(128,44);
-  // 残り15秒＝短く2回（ピピッ）／残り0秒＝長く2回（ピーピーッ）＝社長 10/16。0秒の音は時間ぴったりから鳴り始める（そのぶん音声は1.4秒長い）
+  // 残り15秒＝短く2回（ピピッ）／残り0秒＝長く2回（ピーピーッ）＝社長 10/16。0秒の音は時間ぴったりから鳴り始める（そのぶん音声は1.8秒長い）
   const tone=(t,len)=>{const a=Math.round(t*R),b=Math.min(n,a+Math.round(len*R));for(let i=a;i<b;i++)buf[44+i]=128+Math.round(110*Math.sin(2*Math.PI*1000*(i-a)/R));};
-  if(sec>15){tone(sec-15,.09);tone(sec-15+.16,.09);}tone(sec,.5);tone(sec+.75,.65);
+  // 10/18 聞き取りにくかったので長く・はっきり＝15秒前は0.2秒×2（間0.2秒）・0秒は0.7秒×2（間0.3秒）
+  if(sec>15){tone(sec-15,.2);tone(sec-15+.4,.2);}tone(sec,.7);tone(sec+1,.7);
   if(SNDA&&SNDA.src)URL.revokeObjectURL(SNDA.src);SNDA=SNDA||new Audio();SNDA.src=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));SNDA.volume=1;
-  const p=SNDA.play();if(p&&p.catch)p.catch(()=>{TM.snd=null;});return SNDA;}catch(e){return null;}}
-function beep(short){const c=AC;if(!c)return;(short?[[0,.09],[.16,.09]]:[[0,.5],[.75,.65]]).forEach(([t0,len])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=1000;o.connect(g);g.connect(c.destination);g.gain.value=.6;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+len);});}
+  const p=SNDA.play();if(p&&p.catch)p.catch(()=>{TM.snd=null;});TM.sndAt=Date.now();return SNDA;}catch(e){return null;}}
+function beep(short){const c=AC;if(!c)return;(short?[[0,.2],[.4,.2]]:[[0,.7],[1,.7]]).forEach(([t0,len])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=1000;o.connect(g);g.connect(c.destination);g.gain.value=.6;o.start(c.currentTime+t0);o.stop(c.currentTime+t0+len);});}
 
 // ===== ふり返り（カレンダー・グラフ） =====
 let hM=null;
