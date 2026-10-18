@@ -347,7 +347,7 @@ function tmBar(d){const t=tmGet(d),isT=d===today();
   if(p){const df=Math.round((l-tmLen(p))/60000);sub='前回 '+hm(tmLen(p))+(run?'':'（'+(df>0?'+'+df:df)+'分）');}
   if(b)sub+=(sub?'／':'')+'いちばん短い '+hm(b);
   return `<div class="tmb"><div><small>${run?'経過（'+tmClk(t.s)+' スタートから）':'所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）'}</small><b id="tmv">${run?hms(l):hm(l)}</b>${sub?`<small>${sub}</small>`:''}</div>${run?'<button id="tme">■ おわり</button>':isT?'<button id="tmr" style="background:#999;font-size:13px;padding:8px 10px">測り直す</button>':''}</div>`;}
-setInterval(()=>{const v=document.getElementById('tmv');if(!v||ST.v!=='day'||ST.d!==today())return;const t=tmGet(ST.d);if(t&&!t.m)v.textContent=hms(Date.now()-t.s);},1000);
+setInterval(()=>{const v=document.getElementById('tmv');if(!v||(ST.v!=='day'&&ST.v!=='ex')||ST.d!==today())return;const t=tmGet(ST.d);if(t&&!t.m)v.textContent=hms(Date.now()-t.s);},1000);
 // 経過時間（パソコン版の真ん中の上）＝社長 10/16「トレーニングの経過時間を表示して」。今日スタートしとる間は秒まで動く・おわりの後は所要時間
 function felTick(){const f=document.getElementById('fel');if(!f||typeof D==='undefined')return;const t=tmGet(today());if(!t){f.style.display='none';return;}
   const run=!t.m;f.style.display='block';$('#fels').textContent=run?'経過（'+tmClk(t.s)+' スタートから）':'今日の所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）';$('#felv').textContent=run?hms(Date.now()-t.s):hm(tmLen(t));}
@@ -420,6 +420,7 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
   const draw=()=>{const best=bestSet(e.id,d);const todayMax=isSec(e.id)?0:Math.max(0,...it.sets.map(s=>rm(+s.w,+s.r)));
     m.innerHTML=`<div class="tbar ${TM.iv?'run':''}"><div class="tim"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e52b2f" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
       <b id="tb">${mmss(TM.iv?tLeft():D.rest)}</b><button class="pill" id="tm">−15秒</button><button class="pill" id="tp">＋15秒</button></div><button class="pill f" id="ts">${TM.iv?'止める':'休憩'}</button></div>
+    ${d===today()?tmBar(d):''}
     ${pr?`<div class="prb">🏆 <b>自己ベスト更新！</b><br>${dl} <b>${setTxt(pr.s,e.id)}</b>（これまでの一番：${pr.b?setTxt(pr.b,e.id)+'・'+md(pr.d):'なし'}）</div>`:''}
     ${prev||hasHist?`<div class="last">${prev?`<b>前回 ${md(prev.d)}（${ago(prev.d)}）</b><br>${grp(prev.it.sets,e.id)}`:''}${hasHist?`<button class="lnk" id="hx">これまでの記録 ›</button>`:''}</div>`:''}
     <div class="card" style="margin:10px 10px 4px">${it.sets.map((s,i)=>`<div class="setrow ${s.done?'dn':''}"><span class="no">${i+1}</span>
@@ -435,6 +436,10 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     $('#tm').onclick=()=>{D.rest=Math.max(15,D.rest-15);if(TM.iv){TM.end=Math.max(Date.now()+1000,TM.end-15000);reSnd();}save();draw();};
     $('#tp').onclick=()=>{D.rest+=15;if(TM.iv){TM.end+=15000;reSnd();}save();draw();};
     $('#ts').onclick=()=>{TM.iv?stopT():startT();draw();};
+    // トレーニングのスタート・おわり（種目の画面のタイマーの下）＝社長 10/18「このあたりにスタート・終了のボタンを」
+    if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');felTick();draw();};
+    if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));felTick();draw();};
+    if($('#tmr'))$('#tmr').onclick=()=>{if(confirm('今日の時間を消して、スタートからやり直す？')){delete D.tm[d];save();felTick();draw();}};
     const follow=(i,f,old)=>{for(let j=i+1;j<it.sets.length;j++){const x=it.sets[j];if(x.done||String(x[f])!==String(old))break;x[f]=it.sets[i][f];}};
     m.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.i,s=it.sets[i],f=inp.dataset.f,old=s[f];const v=parseFloat(String(inp.value).replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)));
       if(f==='w')s.w=isNaN(v)||v<=0?'':Math.round(fromU(v)*100)/100;else s.r=isNaN(v)?'':Math.max(0,Math.round(v));delete s.auto;follow(i,f,old);commit();draw();});
