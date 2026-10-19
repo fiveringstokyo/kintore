@@ -1,10 +1,10 @@
 // いちばん下まで送った所からさらに引っぱる＝下に「‹ 戻る／更新／進む ›」の帯（4秒で消える）。
-// スマホ＝指を上へ120px／パソコン＝下へのホイールをもう3目盛ほど回す（社長 10/19「筋トレや雑誌、マイン、とにかくあらゆるもの全て」）。
+// スマホの指だけ＝上へ120px（社長 10/19「筋トレや雑誌、マイン、とにかくあらゆるもの全て」「パソコン版はF5があるからいらん。スマホ版の話」）。
 // アプリの中（PULLBAR・APP.bar がある）＝アプリの帯を出す（作りはアプリの Bar.java／Main.java の PULL と同じ）。枠（iframe）の中でも外のアプリの帯。
-// アプリの外（パソコンの Chrome・スマホの Chrome）＝このページの一番外に同じ帯を描く。
+// アプリの外（スマホの Chrome）＝このページの一番外に同じ帯を描く。
 (function(){
   if (window.__pull) return; window.__pull = 1;
-  var sy = null, el = null, wa = 0, wt = 0;
+  var sy = null, el = null;
   function bar(){   // アプリが無い時に一番外のページに描く帯
     var d = top.document, b = d.getElementById('__pbar'), w = top;
     if (!b) {
@@ -27,15 +27,6 @@
   function typing(t){ return t.closest && t.closest('textarea,input,select'); }
   document.addEventListener('touchstart', function(e){ var t = e.target; el = typing(t) ? null : sc(t); sy = (el && end(el)) ? e.touches[0].clientY : null; }, {passive:true, capture:true});
   document.addEventListener('touchmove', function(e){ if (!el) return; var y = e.touches[0].clientY; if (!end(el)) { sy = null; return; } if (sy == null) { sy = y; return; } if (sy - y > 120) { sy = -1e9; show(); } }, {passive:true, capture:true});
-  // パソコン：回し始めた時にもう一番下＝そこから下へ300ぶん回したら帯（下へ送って来た勢いの続きでは出さん＝間が0.4秒あいたら数え直し）
-  document.addEventListener('wheel', function(e){
-    var now = Date.now(), t = e.target, s = typing(t) ? null : sc(t);
-    if (now - wt > 400) wa = (s && end(s)) ? 0 : -1;
-    wt = now;
-    if (wa < 0 || !s || e.deltaY <= 0 || !end(s)) { wa = -1; return; }
-    wa += e.deltaMode ? e.deltaY * 40 : e.deltaY;
-    if (wa >= 300) { wa = -1; show(); }
-  }, {passive:true, capture:true});
 })();
 
 // ⏎ 文を打つ欄＝Enter1回は改行・すぐもう1回で送る（社長 10/19「すべての欄で改行できるように・2回押しで送信。全社員の全ツールで共通」）。
