@@ -381,7 +381,7 @@ const NAGI_CLIPS={
   pr:[['kin_p09.mp4','すごい！自己ベストだよ！'],['kin_p10.mp4','やったね！新記録！']],   // 自己ベスト
   done:[['kin_p11.mp4','今日も頑張ったね。えらいえらい'],['kin_p12.mp4','お疲れさま。今日もかっこよかったよ']],   // 全部おわり
 };
-const NAGI_MADA=['p06','p18','p08','p13','p15','p09','p10','p11','p12'].map(x=>'kin_'+x+'.mp4');   // まだできとらん動画（10/30 Gemini の前払いが尽きて止まった）＝できたらここから外す
+const NAGI_MADA=['p02','p17','p06','p18','p08','p13','p15','p09','p10','p11','p12'].map(x=>'kin_'+x+'.mp4');   // まだできとらん動画（10/30 Gemini の前払いが尽きて止まった）＝できたらここから外す
 const NAGI_IDLE=['kin_idle1.mp4','kin_idle2.mp4'];   // ふだんの動き（汗を拭く・肩のストレッチ）＝声なしで交互にくり返す
 // 出るかどうかは凪の気分＝場面ごとの出やすさ×その日の機嫌（日ごとに変わる）。始め・自己ベスト・全部おわり・その日最初の「お疲れ」は必ず
 const NAGI_P={start:1,rest20:.2,restEnd:.25,otsukare:.55,pr:1,done:1},NAGI_MUST={start:1,pr:1,done:1};
@@ -395,7 +395,7 @@ function nagiSay(k,boost){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.inclu
   const first=k==='otsukare'&&!NG.said[today()+k];
   if(!NAGI_MUST[k]&&!first){if(busy||now-NG.last<90000)return false;if(Math.random()>NAGI_P[k]*nagiMood()*(boost||1))return false;}
   else if(busy&&!NAGI_MUST[k])return false;
-  const c=L.length>1?L.filter(x=>x[0]!==NG.lastF)[Math.floor(Math.random()*(L.length-1))]:L[0];
+  const F=L.length>1?L.filter(x=>x[0]!==NG.lastF):L,c=F[Math.floor(Math.random()*F.length)];   // 前と同じ動画は続けん・残りから等しく選ぶ
   NG.last=now;NG.lastF=c[0];NG.said[today()+k]=1;
   $('#nsub').textContent=c[1];v.onended=()=>{nagiIdle(1);box.classList.remove('on');};   // しゃべり終わり＝立ち姿で終わる→ふだんの動きも立ち姿から
   v.src='/nagi/v/'+c[0];v.muted=false;v.currentTime=0;box.classList.add('on');
