@@ -28,6 +28,16 @@ input{font:inherit}
 #coach{display:none;position:fixed;top:0;left:calc(440px + var(--fw));border:0;border-left:1px solid #000;background:#fff;width:var(--cw);height:100vh}
 #formv .fm{font-size:20px;text-align:center;line-height:1.7}
 @media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#coach{display:block}#toast{left:220px}}
+/* 凪の応援（パソコン版・本社から開いた時だけ）＝真ん中の列の右下にずっと立っとる。ふだんは止め絵がゆっくり呼吸、決まった時だけ動画＋声＋字幕 */
+:root{--nw:clamp(200px,42vh,460px)}
+#nagi{display:none;position:fixed;bottom:0;right:var(--cw);width:var(--nw);aspect-ratio:9/16;max-height:100vh;overflow:hidden;background:#161a24}
+#nagi img,#nagi video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#nagi img{transform-origin:50% 100%;animation:nbr 5.5s ease-in-out infinite}
+@keyframes nbr{0%,100%{transform:scale(1)}50%{transform:scale(1.008) translateY(-1px)}}
+#nagi video{opacity:0;transition:opacity .25s}#nagi.on video{opacity:1}
+#nsub{position:absolute;left:8px;right:8px;bottom:14px;text-align:center;color:#fff;font-size:18px;line-height:1.5;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s}
+#nagi.on #nsub{opacity:1}
+@media (min-width:1000px){body.nagi #nagi{display:block}body.nagi #formv{padding-right:calc(var(--nw) + 12px)}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
 header h1{flex:1;margin:0;font-size:18px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .hb{min-width:72px;min-height:44px;font-size:15px;color:#fff;padding:0 8px;display:flex;align-items:center}
@@ -160,7 +170,8 @@ svg.g{width:100%;height:170px}
   </nav>
 </div>
 <aside id="formv"><div id="fel"><small id="fels"></small><b id="felv"></b></div><img id="fimg" alt=""><div class="fm" id="fmsg"></div></aside>
-<iframe id="coach" title="専属コーチとの会話" allow="local-network-access; microphone; clipboard-write"></iframe>
+<div id="nagi"><img id="nimg" alt="凪"><video id="nvid" playsinline preload="auto"></video><div id="nsub"></div></div>
+<iframe id="coach"title="専属コーチとの会話" allow="local-network-access; microphone; clipboard-write"></iframe>
 <div id="toast"></div>
 <script>
 'use strict';
@@ -360,6 +371,33 @@ function coachOn(){const c=document.getElementById('coach');if(!c||c.src||c.srcd
   if(ATHOME)c.src='/office.html?solo=trainer__main';
   else c.srcdoc='<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font:16px sans-serif;background:#f3f3f3;text-align:center;line-height:1.8">コーチとの会話は、本社から開いた時に出ます<br><a href="http://localhost:8787/kin/" target="_top" style="font-size:18px">本社の筋トレを開く</a></body>';}
 addEventListener('resize',coachOn);setTimeout(coachOn,0);
+// 凪の応援（専属コーチの設計図 10/30・社長「セクシーな感じで、僕のモチベーションを上げたい」）＝ジムで隣におる凪。パソコン版を本社から開いた時だけ
+//   動画は本社の nagi/v/kin_*.mp4（声入り・office/nagi/kin/make_kin.py で作る）。ここに1行足せば出る＝まだ無い場面は黙ってとばす
+const NAGI_CLIPS={
+  start:[],            // 始める時「行こっか」
+  rest20:[],           // 休憩の残り20秒
+  restEnd:[],          // 休憩おわり
+  otsukare:[['kin_otsukare1.mp4','お疲れさま。…今のセット、すごくよかったよ。']],   // 1種目おわり
+  pr:[],               // 自己ベスト
+  done:[],             // 全部おわり「今日も頑張ったね」
+};
+// 出るかどうかは凪の気分＝場面ごとの出やすさ×その日の機嫌（日ごとに変わる）。始め・自己ベスト・全部おわり・その日最初の「お疲れ」は必ず
+const NAGI_P={start:1,rest20:.2,restEnd:.25,otsukare:.55,pr:1,done:1},NAGI_MUST={start:1,pr:1,done:1};
+const NG={last:0,lastF:'',said:{}};
+function nagiOn(){if(ATHOME)document.body.classList.add('nagi');const i=$('#nimg');if(i&&!i.src)i.src='/nagi/v/kin_stand.jpg';}
+function nagiMood(){const d=today();let h=0;for(const c of d)h=(h*31+c.charCodeAt(0))%997;return .75+(h%50)/100;}   // 0.75〜1.24
+function nagiSay(k,boost){const L=NAGI_CLIPS[k];if(!ATHOME||innerWidth<1000||!L||!L.length)return false;
+  const box=$('#nagi'),v=$('#nvid');if(!box||!v)return false;const now=Date.now(),busy=box.classList.contains('on');
+  const first=k==='otsukare'&&!NG.said[today()+k];
+  if(!NAGI_MUST[k]&&!first){if(busy||now-NG.last<90000)return false;if(Math.random()>NAGI_P[k]*nagiMood()*(boost||1))return false;}
+  else if(busy&&!NAGI_MUST[k])return false;
+  const c=L.length>1?L.filter(x=>x[0]!==NG.lastF)[Math.floor(Math.random()*(L.length-1))]:L[0];
+  NG.last=now;NG.lastF=c[0];NG.said[today()+k]=1;
+  $('#nsub').textContent=c[1];v.onended=()=>box.classList.remove('on');
+  v.src='/nagi/v/'+c[0];v.muted=false;v.currentTime=0;box.classList.add('on');
+  v.play().catch(()=>{v.muted=true;v.play().catch(()=>box.classList.remove('on'));});   // 音が止められとっても字幕で伝える
+  return true;}
+nagiOn();
 
 // ===== その日の記録 =====
 function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
@@ -438,8 +476,8 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     $('#tp').onclick=()=>{D.rest+=15;if(TM.iv){TM.end+=15000;reSnd();}save();draw();};
     $('#ts').onclick=()=>{TM.iv?stopT():startT();draw();};
     // トレーニングのスタート・おわり（種目の画面のタイマーの下）＝社長 10/18「このあたりにスタート・終了のボタンを」
-    if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');felTick();draw();};
-    if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));felTick();draw();};
+    if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');felTick();draw();nagiSay('start');};
+    if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));felTick();draw();nagiSay('done');};
     if($('#tmr'))$('#tmr').onclick=()=>{if(confirm('今日の時間を消して、スタートからやり直す？')){delete D.tm[d];save();felTick();draw();}};
     const follow=(i,f,old)=>{for(let j=i+1;j<it.sets.length;j++){const x=it.sets[j];if(x.done||String(x[f])!==String(old))break;x[f]=it.sets[i][f];}};
     m.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.i,s=it.sets[i],f=inp.dataset.f,old=s[f];const v=parseFloat(String(inp.value).replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)));
@@ -454,8 +492,9 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
       commit();if(s.done){startT();checkPR(s);toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
     $('#rs').onclick=()=>{if(it.sets.length<=1){toast('これ以上は消せん');return;}it.sets.pop();commit();draw();};
     $('#as').onclick=()=>{const l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});commit();draw();};
-    $('#dn').onclick=()=>{commit();back();};
-    $('#nx').onclick=()=>{commit();back();if(ST.v!=='day')go('day',{d});go('pick',{d});};};
+    const exDone=()=>{const n=it.sets.filter(s=>s.done).length;if(n)nagiSay('otsukare',n>=4||pr?1.6:1);};   // 1種目おわり＝がんばった種目（4セット以上・自己ベスト）ほど出やすい
+    $('#dn').onclick=()=>{exDone();commit();back();};
+    $('#nx').onclick=()=>{exDone();commit();back();if(ST.v!=='day')go('day',{d});go('pick',{d});};};
   const commit=()=>{delete it._new;save();};
   // 画面を離れる時：回数の無いセットは残さん。触っとらん新しい種目も残さん
   const cleanup=()=>{const wasNew=it._new;it.sets=it.sets.filter(s=>s.r!==''&&+s.r>0&&!s.auto);if(wasNew||!it.sets.length){D.days[d]=(D.days[d]||[]).filter(x=>x!==it);}
@@ -463,13 +502,14 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     if(!wasNew&&it.sets.length)toast(e.name+' を保存した');};
   ST.leave=cleanup;
   const checkPR=s=>{const bw=s.w===''||!+s.w;const b=bestSet(e.id,d,bw);const v=score(s,bw);const cur=Math.max(0,...it.sets.filter(x=>x!==s&&x.done).map(x=>score(x,bw)));
-    if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
+    if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;nagiSay('pr');try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
   draw();}
-function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.p15=D.rest<=15;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
+function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.p15=D.rest<=15;TM.n20=false;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
   // 音声が途中で止められとったら（ほかの音・端末の都合）、その場で鳴らす音に切り替える＝社長 10/18「2回鳴らすのが効いてない」
   if(TM.snd&&(TM.snd.paused||Math.abs(TM.snd.currentTime-(Date.now()-TM.sndAt)/1000)>1.5)){try{TM.snd.pause();}catch(e){}TM.snd=null;audioOn();}
   if(!TM.p15&&l<=15&&l>0){TM.p15=true;if(!TM.snd)beep(1);}
-  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd)beep();TM.snd=null;}catch(e){}toast('休憩おわり');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
+  if(!TM.n20&&l<=20&&l>0){TM.n20=true;if(D.rest>=40)nagiSay('rest20');}
+  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd)beep();TM.snd=null;}catch(e){}toast('休憩おわり');nagiSay('restEnd');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
 // 休憩中に±15秒した時は、音を残りの時間に合わせて作り直す（15秒前と0秒の音がずれんように）
 function reSnd(){const l=Math.max(0,(TM.end-Date.now())/1000);TM.snd=restSnd(l);TM.p15=l<=15;}
 function stopT(){clearInterval(TM.iv);TM.iv=null;if(TM.snd&&tLeft()>0){try{TM.snd.pause();}catch(e){}TM.snd=null;}}
