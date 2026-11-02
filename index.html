@@ -20,24 +20,24 @@ input{font:inherit}
 /* パソコン版だけ＝右の広い所にフォーム解説の絵（社長 2026-10-08）。スマホの幅では出さん */
 /* 2026-10-16 社長「スマホ版は要らん・パソコン版だけ」＝真ん中＝縦長の絵＋経過時間／右＝専属コーチとの会話（社内の会話窓をそのまま埋め込む） */
 /* 2026-10-17 社長「右の会話の幅を半分にして、真ん中を広く」＝会話＝画面の幅の20%（社長が青で囲んだ幅＝最大化で約490px）・真ん中＝残り全部 */
-:root{--cw:clamp(360px, 20vw, 600px);--fw:calc(100vw - 440px - var(--cw))}
-#formv{display:none;position:fixed;top:0;bottom:0;left:440px;width:var(--fw);background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:8px}
-#formv img{max-width:100%;min-height:0;flex:0 1 auto;max-height:100%;object-fit:contain;border-radius:8px;display:none}
+/* 2026-11-02 社長の赤ペン＝左の列の下に会話窓（筋肉の温度の下・ボタンの上）／真ん中＝フォーム解説の絵／右＝凪を大きく。入力しながらコーチに聞ける形 */
+:root{--nw:calc((100vw - 440px)/2)}
+#formv{display:none;position:fixed;top:0;bottom:0;left:440px;width:calc(100vw - 440px);background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:8px}
+#formv img{max-width:100%;min-height:0;flex:0 1 auto;height:100%;object-fit:contain;border-radius:8px;display:none}
 #fel{display:none;align-self:stretch;text-align:center;background:#0d1017;border-radius:8px;padding:6px 8px;color:#fff;font-variant-numeric:tabular-nums}
 #fel small{display:block;font-size:12px;color:#9aa0ab}#fel b{font-size:34px;letter-spacing:1px}
-#coach{display:none;position:fixed;top:0;left:calc(440px + var(--fw));border:0;border-left:1px solid #000;background:#fff;width:var(--cw);height:100vh}
+#coach{display:none;flex:0 0 clamp(200px,20vh,480px);width:100%;border:0;border-top:1px solid var(--line);background:#fff}
 #formv .fm{font-size:20px;text-align:center;line-height:1.7}
 @media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#coach{display:block}#toast{left:220px}}
-/* 凪の応援（パソコン版・本社から開いた時だけ）＝真ん中の列の右下にずっと立っとる。ふだんは汗を拭く・肩を伸ばす2本を声なしでくり返し（社長 10/30 15:30・どれも立ち姿 p00 で始まり p00 で終わる）、決まった時だけ動画＋声＋字幕 */
-:root{--nw:clamp(200px,42vh,460px)}
-#nagi{display:none;position:fixed;bottom:0;right:var(--cw);width:var(--nw);aspect-ratio:9/16;max-height:100vh;overflow:hidden;background:#161a24}
-#nagi img,#nagi video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* 凪の応援（パソコン版・本社から開いた時だけ）＝右の列いっぱいにずっと立っとる（切らず画面の高さに合わせ、余りは暗い背景・社長 11/02）。ふだんは汗を拭く・肩を伸ばす2本を声なしでくり返し（社長 10/30 15:30・どれも立ち姿 p00 で始まり p00 で終わる）、決まった時だけ動画＋声＋字幕 */
+#nagi{display:none;position:fixed;top:0;bottom:0;right:0;width:var(--nw);overflow:hidden;background:#161a24}
+#nagi img,#nagi video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%}
 #nagi img{transform-origin:50% 100%;animation:nbr 5.5s ease-in-out infinite}
 @keyframes nbr{0%,100%{transform:scale(1)}50%{transform:scale(1.008) translateY(-1px)}}
 #nagi video{opacity:0;transition:opacity .25s}#nagi.on video{opacity:1}#nagi #nidle{opacity:1;transition:none}
 #nsub{position:absolute;left:8px;right:8px;bottom:14px;text-align:center;color:#fff;font-size:18px;line-height:1.5;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s}
 #nagi.on #nsub{opacity:1}
-@media (min-width:1000px){body.nagi #nagi{display:block}body.nagi #formv{padding-right:calc(var(--nw) + 12px)}}
+@media (min-width:1000px){body.nagi #nagi{display:block}body.nagi #formv{width:calc(100vw - 440px - var(--nw))}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
 header h1{flex:1;margin:0;font-size:18px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .hb{min-width:72px;min-height:44px;font-size:15px;color:#fff;padding:0 8px;display:flex;align-items:center}
@@ -110,7 +110,7 @@ nav svg{width:24px;height:24px}
 .prb{background:#fff4c2;border:2px solid #f0c000;margin:10px;border-radius:10px;padding:10px 12px;font-size:14px}
 .prb b{font-size:16px}
 .fab{position:fixed;right:14px;bottom:calc(72px + env(safe-area-inset-bottom));height:56px;padding:0 22px;border-radius:999px;background:var(--g);color:#fff;font-size:17px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.25)}
-@media (min-width:1000px){.fab{right:auto;left:426px;transform:translateX(-100%)}}
+@media (min-width:1000px){.fab{right:auto;left:426px;transform:translateX(-100%);bottom:calc(clamp(200px,20vh,480px) + 72px)}}
 .empty{text-align:center;color:var(--mut);padding:40px 20px}
 .seg{display:flex;margin:10px auto;width:240px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .seg button{flex:1;min-height:44px;font-size:14px}
@@ -161,6 +161,7 @@ svg.g{width:100%;height:170px}
 <div id="app">
   <header><button class="hb" id="hl"></button><h1 id="ttl">筋トレ</h1><div class="hb" id="hr" style="justify-content:flex-end"></div></header>
   <main id="main"></main>
+  <iframe id="coach"title="専属コーチとの会話" allow="local-network-access; microphone; clipboard-write"></iframe>
   <div id="act"></div>
   <nav id="nav">
     <button data-t="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>ホーム</button>
@@ -171,7 +172,6 @@ svg.g{width:100%;height:170px}
 </div>
 <aside id="formv"><div id="fel"><small id="fels"></small><b id="felv"></b></div><img id="fimg" alt=""><div class="fm" id="fmsg"></div></aside>
 <div id="nagi"><img id="nimg" alt="凪"><video id="nidle" muted playsinline preload="auto"></video><video id="nvid" playsinline preload="auto"></video><div id="nsub"></div></div>
-<iframe id="coach"title="専属コーチとの会話" allow="local-network-access; microphone; clipboard-write"></iframe>
 <div id="toast"></div>
 <script>
 'use strict';
@@ -364,11 +364,12 @@ setInterval(()=>{const v=document.getElementById('tmv');if(!v||(ST.v!=='day'&&ST
 function felTick(){const f=document.getElementById('fel');if(!f||typeof D==='undefined')return;const t=tmGet(today());if(!t){f.style.display='none';return;}
   const run=!t.m;f.style.display='block';$('#fels').textContent=run?'経過（'+tmClk(t.s)+' スタートから）':'今日の所要時間（'+tmClk(t.s)+'〜'+tmClk(t.e)+'）';$('#felv').textContent=run?hms(Date.now()-t.s):hm(tmLen(t));}
 setInterval(felTick,1000);
-// 右＝専属コーチとの会話。社内の会話窓（office.html?solo=）をそのまま使う（パソコンの幅の時だけ読み込む）
+// 左の列の下＝専属コーチとの会話。社内の会話窓（office.html?solo=）をそのまま使う（パソコンの幅の時だけ読み込む）
 // パソコン版は本社から開く（http://localhost:8787/kin/）＝会話窓と同じ所なので埋め込める。github の方で開いた時は、本社の方へ案内する
 const ATHOME=location.pathname.startsWith('/kin/');
 function coachOn(){const c=document.getElementById('coach');if(!c||c.src||c.srcdoc||innerWidth<1000)return;
-  if(ATHOME)c.src='/office.html?solo=trainer__main';
+  if(ATHOME){c.onload=()=>{try{const st=c.contentDocument.createElement('style');st.textContent='@media (max-height:300px){.whead{display:none!important}.wfoot{padding:4px 8px}.cinput textarea{height:44px!important;min-height:44px!important;max-height:44px}}';c.contentDocument.head.appendChild(st);}catch(e){}};   // 窓が低い時は札を隠して入力欄を低く＝会話の字を残す（社内の会話窓そのものは触らん）
+    c.src='/office.html?solo=trainer__main';}
   else c.srcdoc='<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font:16px sans-serif;background:#f3f3f3;text-align:center;line-height:1.8">コーチとの会話は、本社から開いた時に出ます<br><a href="http://localhost:8787/kin/" target="_top" style="font-size:18px">本社の筋トレを開く</a></body>';}
 addEventListener('resize',coachOn);setTimeout(coachOn,0);
 // 凪の応援（専属コーチの設計図 10/30・社長「セクシーな感じで、僕のモチベーションを上げたい」）＝ジムで隣におる凪。パソコン版を本社から開いた時だけ
