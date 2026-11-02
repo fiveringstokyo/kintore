@@ -20,19 +20,19 @@ input{font:inherit}
 /* パソコン版だけ＝右の広い所にフォーム解説の絵（社長 2026-10-08）。スマホの幅では出さん */
 /* 2026-10-16 社長「スマホ版は要らん・パソコン版だけ」＝真ん中＝縦長の絵＋経過時間／右＝専属コーチとの会話（社内の会話窓をそのまま埋め込む） */
 /* 2026-10-17 社長「右の会話の幅を半分にして、真ん中を広く」＝会話＝画面の幅の20%（社長が青で囲んだ幅＝最大化で約490px）・真ん中＝残り全部 */
-/* 2026-11-02 社長の赤ペン＝左の列の下に会話窓（筋肉の温度の下・ボタンの上）／真ん中＝フォーム解説の絵／右＝凪を大きく。入力しながらコーチに聞ける形 */
+/* 2026-11-02 社長の赤ペン＝真ん中＝フォーム解説の絵／右＝凪を大きく。会話窓は下のタブ「AI指示」を押した時だけ左の列いっぱいに開く（同日の赤ペン＝常に出とると狭くて読みづらい） */
 :root{--nw:calc((100vw - 440px)/2)}
 #formv{display:none;position:fixed;top:0;bottom:0;left:440px;width:calc(100vw - 440px);background:#161a24;color:#cfd3dc;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:8px}
 #formv img{max-width:100%;min-height:0;flex:0 1 auto;height:100%;object-fit:contain;border-radius:8px;display:none}
 #fel{display:none;align-self:stretch;text-align:center;background:#0d1017;border-radius:8px;padding:6px 8px;color:#fff;font-variant-numeric:tabular-nums}
 #fel small{display:block;font-size:12px;color:#9aa0ab}#fel b{font-size:34px;letter-spacing:1px}#fel.paused{background:#5c4600}#fel.paused small{color:#ffd65c;font-weight:700}#fel.paused b{color:#ffd65c}
-#coach{display:none;flex:0 0 clamp(200px,20vh,480px);width:100%;border:0;border-top:1px solid var(--line);background:#fff}
+#coach{display:none;border:0;background:#fff}
 /* 種目を選ぶ画面の真ん中＝筋肉の温度の図（社長 11/02「どの筋肉が冷えとるか見ながら選ぶ」） */
 #fmus{display:none;flex:1 1 0;min-height:0;width:100%;flex-direction:column;background:#fff;border-radius:10px;padding:8px;cursor:pointer}#fmus.on{display:flex}#fmus.on~.fm{font-size:13px;line-height:1.5}
 #fmush{display:flex;justify-content:space-between;font-size:14px;color:#777;padding:0 8px}#fmusb{flex:1;min-height:0}#fmusb>div{height:100%;gap:12px!important}
 #fmusb>div>div{flex:1 1 0!important;max-width:none!important;min-width:0;height:100%;display:flex;flex-direction:column}#fmusb svg{flex:1;min-height:0;height:0!important}
 #formv .fm{font-size:20px;text-align:center;line-height:1.7}
-@media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#coach{display:block}#toast{left:220px}}
+@media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#toast{left:220px}}
 /* 凪の応援（パソコン版・本社から開いた時だけ）＝右の列いっぱいにずっと立っとる（切らず画面の高さに合わせ、余りは暗い背景・社長 11/02）。ふだんは汗を拭く・肩を伸ばす2本を声なしでくり返し（社長 10/30 15:30・どれも立ち姿 p00 で始まり p00 で終わる）、決まった時だけ動画＋声＋字幕 */
 #nagi{display:none;position:fixed;top:0;bottom:0;right:0;width:var(--nw);overflow:hidden;background:#161a24}
 #nagi img,#nagi video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%}
@@ -50,6 +50,10 @@ nav{display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom
 nav button{flex:1;padding:8px 0 6px;font-size:11px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px}
 nav button.on{color:var(--r)}
 nav svg{width:24px;height:24px}
+#aih{display:none}nav button[data-t=ai]{display:none}
+/* AI指示＝下の画面の上に重ねるだけ＝入力中の数字も読んどる位置も消えん。閉じとる間も同じ大きさのまま隠す＝会話窓の書きかけと位置も残る */
+@media (min-width:1000px){nav button[data-t=ai]{display:flex}#coach{display:block;position:absolute;left:0;width:100%;z-index:6;visibility:hidden}body.ai #coach{visibility:visible}
+  body.ai #aih{display:flex;position:absolute;top:0;left:0;right:0;z-index:6}body.ai .fab{display:none}body.ai nav button.on{color:var(--mut)}body.ai nav button[data-t=ai]{color:var(--r)}}
 .hero{background:var(--r);color:#fff;padding:0 10px 12px}
 .mon{font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:space-between}
 .mon button{color:#fff;font-size:24px;width:48px;height:44px}
@@ -114,7 +118,7 @@ nav svg{width:24px;height:24px}
 .prb{background:#fff4c2;border:2px solid #f0c000;margin:10px;border-radius:10px;padding:10px 12px;font-size:14px}
 .prb b{font-size:16px}
 .fab{position:fixed;right:14px;bottom:calc(72px + env(safe-area-inset-bottom));height:56px;padding:0 22px;border-radius:999px;background:var(--g);color:#fff;font-size:17px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.25)}
-@media (min-width:1000px){.fab{right:auto;left:426px;transform:translateX(-100%);bottom:calc(clamp(200px,20vh,480px) + 72px)}}
+@media (min-width:1000px){.fab{right:auto;left:426px;transform:translateX(-100%);}}
 .empty{text-align:center;color:var(--mut);padding:40px 20px}
 .seg{display:flex;margin:10px auto;width:240px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .seg button{flex:1;min-height:44px;font-size:14px}
@@ -164,6 +168,7 @@ svg.g{width:100%;height:170px}
 <body>
 <div id="app">
   <header><button class="hb" id="hl"></button><h1 id="ttl">筋トレ</h1><div class="hb" id="hr" style="justify-content:flex-end"></div></header>
+  <header id="aih"><button class="hb" id="aib">‹ 戻る</button><h1>AI指示</h1><div class="hb"></div></header>
   <main id="main"></main>
   <iframe id="coach"title="専属コーチとの会話" allow="local-network-access; microphone; clipboard-write"></iframe>
   <div id="act"></div>
@@ -171,6 +176,7 @@ svg.g{width:100%;height:170px}
     <button data-t="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>ホーム</button>
     <button data-t="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>ふり返り</button>
     <button data-t="body"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9a4 4 0 016 0l-3 3"/></svg>体重</button>
+    <button data-t="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-8 8H4l2.5-3.2A8 8 0 1121 12z"/></svg>AI指示</button>
     <button data-t="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>設定</button>
   </nav>
 </div>
@@ -300,7 +306,12 @@ function go(v,o={},push=true){if(push)STACK.push(ST);ST=Object.assign({v},o);ren
 function back(){leave();ST=STACK.pop()||{v:'home'};render();}
 // 下のメニューで飛ぶ時は、途中の画面（種目の入力など）の片付けも全部すませる
 function leaveAll(){leave();while(STACK.length){const s=STACK.pop();if(s.leave){const f=s.leave;s.leave=null;f();}}}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{leaveAll();go(b.dataset.t,{},false);});
+// AI指示のタブ＝画面は切り替えず重ねるだけ。下の画面と同じタブを押したらそのまま戻る
+function aiBox(){const c=$('#coach'),h=document.querySelector('#app>header').getBoundingClientRect(),n=$('#nav').getBoundingClientRect();c.style.top=h.bottom+'px';c.style.height=(n.top-h.bottom)+'px';$('#aih').style.height=h.height+'px';}
+function aiShow(on){if(on)aiBox();document.body.classList.toggle('ai',on);}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{const ai=document.body.classList.contains('ai');if(b.dataset.t==='ai'){aiShow(!ai);return;}
+  if(ai){aiShow(false);if(b.classList.contains('on'))return;}leaveAll();go(b.dataset.t,{},false);});
+$('#aib').onclick=()=>aiShow(false);addEventListener('resize',aiBox);setTimeout(aiBox,0);
 function hdr(title,left,right){$('#ttl').textContent=title;const l=$('#hl');l.innerHTML=left?'‹ 戻る':'';l.onclick=left?back:null;$('#hr').innerHTML=right||'';
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===({day:'home',pick:'home',ex:'home',newex:'home',rmc:'home',exh:'hist'}[ST.v]||ST.v)));}
 function render(){stopFab();showForm();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);musFill();musBig();}
@@ -379,8 +390,7 @@ setInterval(felTick,1000);
 // パソコン版は本社から開く（http://localhost:8787/kin/）＝会話窓と同じ所なので埋め込める。github の方で開いた時は、本社の方へ案内する
 const ATHOME=location.pathname.startsWith('/kin/');
 function coachOn(){const c=document.getElementById('coach');if(!c||c.src||c.srcdoc||innerWidth<1000)return;
-  if(ATHOME){c.onload=()=>{try{const st=c.contentDocument.createElement('style');st.textContent='@media (max-height:300px){.whead{display:none!important}.wfoot{padding:4px 8px}.cinput textarea{height:44px!important;min-height:44px!important;max-height:44px}}';c.contentDocument.head.appendChild(st);}catch(e){}};   // 窓が低い時は札を隠して入力欄を低く＝会話の字を残す（社内の会話窓そのものは触らん）
-    c.src='/office.html?solo=trainer__main';}
+  if(ATHOME)c.src='/office.html?solo=trainer__main';
   else c.srcdoc='<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font:16px sans-serif;background:#f3f3f3;text-align:center;line-height:1.8">コーチとの会話は、本社から開いた時に出ます<br><a href="http://localhost:8787/kin/" target="_top" style="font-size:18px">本社の筋トレを開く</a></body>';}
 addEventListener('resize',coachOn);setTimeout(coachOn,0);
 // 凪の応援（専属コーチの設計図 10/30・社長「セクシーな感じで、僕のモチベーションを上げたい」）＝ジムで隣におる凪。パソコン版を本社から開いた時だけ
@@ -573,7 +583,7 @@ function musFill(){const go2=M=>{MUSMOD=M;const el=$('#mmi');if(!el||el.dataset.
   $('#mmini').onclick=()=>go('hist',{mode:'mus'});};if(!$('#mmi'))return;MUSMOD?go2(MUSMOD):import('./muscle.js').then(go2).catch(()=>{});}
 // 種目を選ぶ画面だけ、真ん中の空きに同じ図を大きく出す（パソコン版）
 function musBig(){const b=$('#fmus');if(!b)return;const on=ST.v==='pick'&&innerWidth>=1000;b.classList.toggle('on',on);if(!on)return;
-  const go2=M=>{MUSMOD=M;if(ST.v!=='pick')return;$('#fmush').innerHTML=musHd();$('#fmusb').innerHTML=M.svg(M.tally(D,D.musR,norm).t,true);b.onclick=()=>go('hist',{mode:'mus'});};MUSMOD?go2(MUSMOD):import('./muscle.js').then(go2).catch(()=>{});}
+  const go2=M=>{MUSMOD=M;if(ST.v!=='pick')return;$('#fmush').innerHTML=musHd();$('#fmusb').innerHTML=M.svg(M.tally(D,D.musR,norm).t,true);b.onclick=()=>{aiShow(false);go('hist',{mode:'mus'});};};MUSMOD?go2(MUSMOD):import('./muscle.js').then(go2).catch(()=>{});}
 // ===== 筋肉マップ（正面・背面の平面図。リセットしてから鍛えた筋肉が赤くなる・中身は muscle.js） =====
 // リセット＝その時点を0にする。その日にもう入っとるセットは数えん（D.musR.base）・同期は新しい方（at）が勝つ
 function musReset(){if(!confirm('筋肉の温度を全部青（0）に戻す？（トレーニングの記録は消えん）'))return;const d=today(),base={};
