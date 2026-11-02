@@ -27,6 +27,10 @@ input{font:inherit}
 #fel{display:none;align-self:stretch;text-align:center;background:#0d1017;border-radius:8px;padding:6px 8px;color:#fff;font-variant-numeric:tabular-nums}
 #fel small{display:block;font-size:12px;color:#9aa0ab}#fel b{font-size:34px;letter-spacing:1px}#fel.paused{background:#5c4600}#fel.paused small{color:#ffd65c;font-weight:700}#fel.paused b{color:#ffd65c}
 #coach{display:none;flex:0 0 clamp(200px,20vh,480px);width:100%;border:0;border-top:1px solid var(--line);background:#fff}
+/* 種目を選ぶ画面の真ん中＝筋肉の温度の図（社長 11/02「どの筋肉が冷えとるか見ながら選ぶ」） */
+#fmus{display:none;flex:1 1 0;min-height:0;width:100%;flex-direction:column;background:#fff;border-radius:10px;padding:8px;cursor:pointer}#fmus.on{display:flex}#fmus.on~.fm{font-size:13px;line-height:1.5}
+#fmush{display:flex;justify-content:space-between;font-size:14px;color:#777;padding:0 8px}#fmusb{flex:1;min-height:0}#fmusb>div{height:100%;gap:12px!important}
+#fmusb>div>div{flex:1 1 0!important;max-width:none!important;min-width:0;height:100%;display:flex;flex-direction:column}#fmusb svg{flex:1;min-height:0;height:0!important}
 #formv .fm{font-size:20px;text-align:center;line-height:1.7}
 @media (min-width:1000px){#app{right:auto;width:440px;border-right:1px solid #000}#formv{display:flex}#coach{display:block}#toast{left:220px}}
 /* 凪の応援（パソコン版・本社から開いた時だけ）＝右の列いっぱいにずっと立っとる（切らず画面の高さに合わせ、余りは暗い背景・社長 11/02）。ふだんは汗を拭く・肩を伸ばす2本を声なしでくり返し（社長 10/30 15:30・どれも立ち姿 p00 で始まり p00 で終わる）、決まった時だけ動画＋声＋字幕 */
@@ -170,7 +174,7 @@ svg.g{width:100%;height:170px}
     <button data-t="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>設定</button>
   </nav>
 </div>
-<aside id="formv"><div id="fel"><small id="fels"></small><b id="felv"></b></div><img id="fimg" alt=""><div class="fm" id="fmsg"></div></aside>
+<aside id="formv"><div id="fel"><small id="fels"></small><b id="felv"></b></div><img id="fimg" alt=""><div id="fmus"><div id="fmush"></div><div id="fmusb"></div></div><div class="fm" id="fmsg"></div></aside>
 <div id="nagi"><img id="nimg" alt="凪"><video id="nidle" muted playsinline preload="auto"></video><video id="nvid" playsinline preload="auto"></video><div id="nsub"></div></div>
 <div id="toast"></div>
 <script>
@@ -299,7 +303,7 @@ function leaveAll(){leave();while(STACK.length){const s=STACK.pop();if(s.leave){
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{leaveAll();go(b.dataset.t,{},false);});
 function hdr(title,left,right){$('#ttl').textContent=title;const l=$('#hl');l.innerHTML=left?'‹ 戻る':'';l.onclick=left?back:null;$('#hr').innerHTML=right||'';
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===({day:'home',pick:'home',ex:'home',newex:'home',rmc:'home',exh:'hist'}[ST.v]||ST.v)));}
-function render(){stopFab();showForm();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);musFill();}
+function render(){stopFab();showForm();act('');const m=$('#main');m.scrollTop=0;({home,day,pick,ex,newex,hist,exh,body,set,rmc}[ST.v])(m);musFill();musBig();}
 // ===== フォーム解説の絵（パソコン版の右側）＝前に別の日にやった種目だけ出す。絵は専属コーチ班が form/ に置く =====
 let FORMS=null;fetch('form/index.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FORMS={};for(const k in j)FORMS[norm(k)]=j[k];if(ST&&ST.v==='ex')render();}).catch(()=>{FORMS={};});
 function showForm(name,has){const im=$('#fimg'),ms=$('#fmsg');if(!im)return;const f=name&&has&&FORMS&&FORMS[norm(name)];
@@ -563,9 +567,13 @@ function hist(m){hdr('ふり返り');const mode=ST.mode||'cal',part=ST.part||'AL
   m.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ST.mode=b.dataset.m;render();});}
 // ===== 筋肉の温度（小さい図）＝その日の画面と種目の画面にいつも出す（社長 10/12「常にトレーニングの画面に表示」）。リセットしてからの蓄積・押すと大きい図へ =====
 let MUSMOD=null;
-function musMini(){return `<div id="mmini" style="background:#fff;margin:8px 10px 0;border-radius:10px;padding:6px 4px 4px;cursor:pointer"><div style="display:flex;justify-content:space-between;font-size:12px;color:#777;padding:0 8px"><span>🌡 筋肉の温度${D.musR?`（${+D.musR.d.slice(5,7)}/${+D.musR.d.slice(8)}から）`:''}</span><span>青＝まだ／赤＝たくさん ›</span></div><div id="mmi" style="min-height:120px"></div></div>`;}
+function musHd(){return `<span>🌡 筋肉の温度${D.musR?`（${+D.musR.d.slice(5,7)}/${+D.musR.d.slice(8)}から）`:''}</span><span>青＝まだ／赤＝たくさん ›</span>`;}
+function musMini(){return `<div id="mmini" style="background:#fff;margin:8px 10px 0;border-radius:10px;padding:6px 4px 4px;cursor:pointer"><div style="display:flex;justify-content:space-between;font-size:12px;color:#777;padding:0 8px">${musHd()}</div><div id="mmi" style="min-height:120px"></div></div>`;}
 function musFill(){const go2=M=>{MUSMOD=M;const el=$('#mmi');if(!el||el.dataset.ok)return;el.dataset.ok=1;el.innerHTML=M.svg(M.tally(D,D.musR,norm).t,true);
   $('#mmini').onclick=()=>go('hist',{mode:'mus'});};if(!$('#mmi'))return;MUSMOD?go2(MUSMOD):import('./muscle.js').then(go2).catch(()=>{});}
+// 種目を選ぶ画面だけ、真ん中の空きに同じ図を大きく出す（パソコン版）
+function musBig(){const b=$('#fmus');if(!b)return;const on=ST.v==='pick'&&innerWidth>=1000;b.classList.toggle('on',on);if(!on)return;
+  const go2=M=>{MUSMOD=M;if(ST.v!=='pick')return;$('#fmush').innerHTML=musHd();$('#fmusb').innerHTML=M.svg(M.tally(D,D.musR,norm).t,true);b.onclick=()=>go('hist',{mode:'mus'});};MUSMOD?go2(MUSMOD):import('./muscle.js').then(go2).catch(()=>{});}
 // ===== 筋肉マップ（正面・背面の平面図。リセットしてから鍛えた筋肉が赤くなる・中身は muscle.js） =====
 // リセット＝その時点を0にする。その日にもう入っとるセットは数えん（D.musR.base）・同期は新しい方（at）が勝つ
 function musReset(){if(!confirm('筋肉の温度を全部青（0）に戻す？（トレーニングの記録は消えん）'))return;const d=today(),base={};
