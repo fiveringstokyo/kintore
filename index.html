@@ -385,29 +385,28 @@ const NAGI_CLIPS={
   start:[['kin_p01.mp4','行こっか。今日もいいとこ見せてね'],['kin_p02.mp4','ほら、始めよ？'],['kin_p14.mp4','準備できた？ちゃんと見てるからね']],   // 始める時
   rest20:[['kin_p03.mp4','あと20秒だよ'],['kin_p04.mp4','あと20秒。そろそろ準備してね'],['kin_p16.mp4','あと20秒…息、整えてね'],['kin_p17.mp4','あと20秒。ほら、もうすぐ'],['kin_p18.mp4','あと20秒。次もいけるよね？']],   // 休憩の残り20秒
   restEnd:[['kin_p05.mp4','はい、次いこ！'],['kin_p06.mp4','さあ、行ってらっしゃい']],   // 休憩おわり
-  otsukare:[['kin_p07.mp4','お疲れさま。今のすごくよかったよ'],['kin_p08.mp4','いい感じ。かっこよかった'],['kin_p13.mp4','…ちゃんと見てたよ。お疲れさま'],['kin_p15.mp4','お疲れ！その調子']],   // 1種目おわり
+  otsukare:[['kin_p07.mp4','お疲れさま。今のすごくよかったよ'],['kin_p08.mp4','いい感じ。かっこよかった'],['kin_p13.mp4','…ちゃんと見てたよ。お疲れさま'],['kin_p15.mp4','お疲れ！その調子']],   // 1セットおわり・1種目おわり
   pr:[['kin_p09.mp4','すごい！自己ベストだよ！'],['kin_p10.mp4','やったね！新記録！']],   // 自己ベスト
   done:[['kin_p11.mp4','今日も頑張ったね。えらいえらい'],['kin_p12.mp4','お疲れさま。今日もかっこよかったよ']],   // 全部おわり
 };
 const NAGI_MADA=[].map(x=>'kin_'+x+'.mp4');   // まだできとらん動画＝ここに載せた物は流さん（10/30夜 20本そろって空＝作った動画は全部使う・社長「作ったのに使わん動画が出んように」）
 const NAGI_IDLE=['kin_idle1.mp4','kin_idle2.mp4'];   // ふだんの動き（汗を拭く・肩のストレッチ）＝声なしで交互にくり返す
-// 出るかどうかは凪の気分＝場面ごとの出やすさ×その日の機嫌（日ごとに変わる）。始め・自己ベスト・全部おわり・その日最初の「お疲れ」は必ず
-const NAGI_P={start:1,rest20:.2,restEnd:.25,otsukare:.55,pr:1,done:1},NAGI_MUST={start:1,pr:1,done:1};
-const NG={last:0,lastF:'',said:{},idle:0};
+// 節目では毎回必ず喋る（社長 11/02「節目節目で凪に喋ってほしい。全然しゃべらない」＝10/30 の「出るかは凪の気分」をやめた）。喋っとる途中の次の節目＝始め・自己ベスト・全部おわりは割り込み、ほかはとばす
+const NAGI_MUST={start:1,pr:1,done:1};
+const NG={lastF:'',idle:0,tok:0};
 function nagiOn(){if(ATHOME)document.body.classList.add('nagi');const i=$('#nimg');if(i&&!i.src)i.src='/nagi/v/kin_stand.jpg';
   const n=$('#nidle');if(n&&!n.src&&ATHOME){n.onended=()=>nagiIdle(1);nagiIdle(0);}}
 function nagiIdle(nx){const n=$('#nidle');if(!n)return;NG.idle=(NG.idle+nx)%NAGI_IDLE.length;n.src='/nagi/v/'+NAGI_IDLE[NG.idle];n.currentTime=0;n.play().catch(()=>{});}   // 毎回立ち姿から＝つなぎ目が飛ばん
-function nagiMood(){const d=today();let h=0;for(const c of d)h=(h*31+c.charCodeAt(0))%997;return .75+(h%50)/100;}   // 0.75〜1.24
-function nagiSay(k,boost){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[0]));if(!ATHOME||innerWidth<1000||!L||!L.length)return false;
-  const box=$('#nagi'),v=$('#nvid');if(!box||!v)return false;const now=Date.now(),busy=box.classList.contains('on');
-  const first=k==='otsukare'&&!NG.said[today()+k];
-  if(!NAGI_MUST[k]&&!first){if(busy||now-NG.last<90000)return false;if(Math.random()>NAGI_P[k]*nagiMood()*(boost||1))return false;}
-  else if(busy&&!NAGI_MUST[k])return false;
+function nagiSay(k){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[0]));if(!ATHOME||innerWidth<1000||!L||!L.length)return false;
+  const box=$('#nagi'),v=$('#nvid');if(!box||!v)return false;if(box.classList.contains('on')&&Date.now()-(NG.at||0)<20000&&!NAGI_MUST[k])return false;   // 20秒＝動画が読めず止まっても、以後ずっと黙らん
   const F=L.length>1?L.filter(x=>x[0]!==NG.lastF):L,c=F[Math.floor(Math.random()*F.length)];   // 前と同じ動画は続けん・残りから等しく選ぶ
-  NG.last=now;NG.lastF=c[0];NG.said[today()+k]=1;
-  $('#nsub').textContent=c[1];v.onended=()=>{nagiIdle(1);box.classList.remove('on');};   // しゃべり終わり＝立ち姿で終わる→ふだんの動きも立ち姿から
+  NG.lastF=c[0];NG.at=Date.now();const tk=++NG.tok,off=()=>{if(tk===NG.tok){nagiIdle(1);box.classList.remove('on');}};
+  $('#nsub').textContent=c[1];v.onended=off;v.onerror=off;   // しゃべり終わり＝立ち姿で終わる→ふだんの動きも立ち姿から
   v.src='/nagi/v/'+c[0];v.muted=false;v.currentTime=0;box.classList.add('on');
-  v.play().catch(()=>{v.muted=true;v.play().catch(()=>box.classList.remove('on'));});   // 音が止められとっても字幕で伝える
+  // 前は失敗を全部「消音で流し直す」にしとった＝割り込みで前の再生が AbortError になると、次の動画まで消音にしとった。声を断られた時だけ消音で流し、言うて、次に押した所で声を戻す
+  v.play().catch(e=>{if(tk!==NG.tok)return;if(e&&e.name==='AbortError'){v.play().catch(()=>{});return;}if(!e||e.name!=='NotAllowedError'){off();return;}
+    v.muted=true;v.play().catch(off);toast('凪の声をブラウザが止めた。画面を1回押すと声が出る');
+    const un=()=>{removeEventListener('pointerdown',un,true);removeEventListener('keydown',un,true);if(tk===NG.tok)v.muted=false;};addEventListener('pointerdown',un,true);addEventListener('keydown',un,true);});
   return true;}
 nagiOn();
 
@@ -418,7 +417,7 @@ function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
    <div class="pad">${L.length?L.map((x,i)=>{const e=exById(x.ex)||{name:'?'};return `<div class="card"><h3 data-i="${i}">${esc(e.name)}<small>なおす ›</small></h3>${x.sets.map((s,j)=>`<div class="row"><span class="m">${j+1}</span><span class="n">${setTxt(s,x.ex)}</span></div>`).join('')}</div>`;}).join('')
    :'<div class="empty">この日の記録はまだ無い</div><button class="btn" id="addx" style="width:100%;margin:0">＋ 種目を足す</button>'}</div>`;
   m.querySelectorAll('h3[data-i]').forEach(h=>h.onclick=()=>go('ex',{d,ex:L[+h.dataset.i].ex}));
-  if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');render();};if($('#tmpz'))$('#tmpz').onclick=()=>{tmPause(d);render();};if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));render();};
+  if($('#tms'))$('#tms').onclick=()=>{tmStart(d);toast('スタート！ 時間を測っとる');render();nagiSay('start');};if($('#tmpz'))$('#tmpz').onclick=()=>{tmPause(d);render();};if($('#tme'))$('#tme').onclick=()=>{tmEnd(d);toast('おつかれ！ '+hm(tmLen(tmGet(d))));render();nagiSay('done');};
   if($('#tmr'))$('#tmr').onclick=()=>{if(confirm('今日の時間を消して、スタートからやり直す？')){delete D.tm[d];save();render();}};
   if($('#addx'))$('#addx').onclick=()=>go('pick',{d});else fab(()=>go('pick',{d}),'＋ 種目を足す');}
 
@@ -502,10 +501,10 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
       if(s.done)tmTick(d);
       if(s.done&&i===it.sets.length-1)it.sets.push({w:s.w,r:s.r,done:false,auto:1});
       if(!s.done&&i===it.sets.length-2&&it.sets[i+1].auto)it.sets.pop();
-      commit();if(s.done){startT();checkPR(s);toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
+      commit();if(s.done){startT();if(!checkPR(s))nagiSay('otsukare');toast((i+1)+'セット目 できた！ 休憩 '+mmss(D.rest));}draw();});
     $('#rs').onclick=()=>{if(it.sets.length<=1){toast('これ以上は消せん');return;}it.sets.pop();commit();draw();};
     $('#as').onclick=()=>{const l=it.sets[it.sets.length-1]||{w:'',r:''};it.sets.push({w:l.w,r:l.r,done:false});commit();draw();};
-    const exDone=()=>{const n=it.sets.filter(s=>s.done).length;if(n)nagiSay('otsukare',n>=4||pr?1.6:1);};   // 1種目おわり＝がんばった種目（4セット以上・自己ベスト）ほど出やすい
+    const exDone=()=>{const n=it.sets.filter(s=>s.done).length;if(n)nagiSay('otsukare');};   // 1種目おわり
     $('#dn').onclick=()=>{exDone();commit();back();};
     $('#nx').onclick=()=>{exDone();commit();back();if(ST.v!=='day')go('day',{d});go('pick',{d});};};
   const commit=()=>{delete it._new;save();};
@@ -515,13 +514,13 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
     if(!wasNew&&it.sets.length)toast(e.name+' を保存した');};
   ST.leave=cleanup;
   const checkPR=s=>{const bw=s.w===''||!+s.w;const b=bestSet(e.id,d,bw);const v=score(s,bw);const cur=Math.max(0,...it.sets.filter(x=>x!==s&&x.done).map(x=>score(x,bw)));
-    if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;nagiSay('pr');try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}}};
+    if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;nagiSay('pr');try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}return true;}return false;};
   draw();}
 function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=restSnd(D.rest);TM.p15=D.rest<=15;TM.n20=false;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
   // 音声が途中で止められとったら（ほかの音・端末の都合）、その場で鳴らす音に切り替える＝社長 10/18「2回鳴らすのが効いてない」
   if(TM.snd&&(TM.snd.paused||Math.abs(TM.snd.currentTime-(Date.now()-TM.sndAt)/1000)>1.5)){try{TM.snd.pause();}catch(e){}TM.snd=null;audioOn();}
   if(!TM.p15&&l<=15&&l>0){TM.p15=true;if(!TM.snd)beep(1);}
-  if(!TM.n20&&l<=20&&l>0){TM.n20=true;if(D.rest>=40)nagiSay('rest20');}
+  if(!TM.n20&&l<=20&&l>0){TM.n20=true;if(l>=18)nagiSay('rest20');}
   if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd)beep();TM.snd=null;}catch(e){}toast('休憩おわり');nagiSay('restEnd');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
 // 休憩中に±15秒した時は、音を残りの時間に合わせて作り直す（15秒前と0秒の音がずれんように）
 function reSnd(){const l=Math.max(0,(TM.end-Date.now())/1000);TM.snd=restSnd(l);TM.p15=l<=15;}
