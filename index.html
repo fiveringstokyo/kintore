@@ -405,25 +405,43 @@ const NAGI_CLIPS={
 };
 const NAGI_MADA=[].map(x=>'kin_'+x+'.mp4');   // まだできとらん動画＝ここに載せた物は流さん（10/30夜 20本そろって空＝作った動画は全部使う・社長「作ったのに使わん動画が出んように」）
 const NAGI_IDLE=['kin_idle1.mp4','kin_idle2.mp4'];   // ふだんの動き（汗を拭く・肩のストレッチ）＝声なしで交互にくり返す
-// 節目では毎回必ず喋る（社長 11/02「節目節目で凪に喋ってほしい。全然しゃべらない」＝10/30 の「出るかは凪の気分」をやめた）。喋っとる途中の次の節目＝始め・自己ベスト・全部おわりは割り込み、ほかはとばす
-const NAGI_MUST={start:1,pr:1,done:1,rest20:1,restEnd:1};   // 休憩の2つは音の代わりの知らせ＝別の言葉の途中でも飛ばさん（社長 11/02）
+// 節目では毎回必ず喋る（社長 11/02「節目節目で凪に喋ってほしい」「鳴ったり鳴らなかったりする。きっちり確実に」）。時刻に意味がある言葉は割り込む。褒める言葉は途中に来たら順番待ち、割り込まれたら後で言い直す＝飛ばさん
+const NAGI_PRAISE={otsukare:1,pr:1};
 const NAGI_NOTE={rest20:'あと20秒',restEnd:'休憩おわり'};   // 声が出せん時に字で出す言葉
-const nagiCan=()=>ATHOME&&innerWidth>=1000;   // 凪が喋れる画面＝ここでは休憩の音を鳴らさん。スマホ幅など凪が出ん画面は代わりが無いので音のまま
-const NG={lastF:'',idle:0,tok:0};
-function nagiOn(){if(ATHOME)document.body.classList.add('nagi');const i=$('#nimg');if(i&&!i.src)i.src='/nagi/v/kin_stand.jpg';
+let NAGI_W=innerWidth;   // 最小化すると幅が0になることがある＝見えとる時の幅で決める
+const nagiCan=()=>{if(!document.hidden&&innerWidth>0)NAGI_W=innerWidth;return ATHOME&&NAGI_W>=1000;};   // 凪が喋れる画面＝ここでは休憩の音を鳴らさん。スマホ幅など凪が出ん画面は代わりが無いので音のまま
+const NG={lastF:'',idle:0,tok:0,blob:{},cur:null,wait:null,logT:0};
+// 動画は先に全部手元へ＝言う瞬間にサーバーが再起動中・混んどっても止まらん（配信は保存なし・毎回取り直しやった）
+async function nagiLoad(){if(NG.loading||!nagiCan())return;NG.loading=1;for(const k in NAGI_CLIPS)for(const x of NAGI_CLIPS[k]){if(NG.blob[x[0]])continue;try{const r=await fetch('/nagi/v/'+x[0]);if(r.ok)NG.blob[x[0]]=URL.createObjectURL(await r.blob());}catch(e){}}NG.loading=0;}
+// 節目ごとの記録＝D.nagiLog に入り、最新.json で専属コーチが読める。r＝ok喋った／cut途中で切られた／wait順番待ち／merge順番待ちと一つにした／fail声が出せず字だけ／skip喋らん画面
+function nagiLog(k,f,r,why,x){const e=Object.assign({at:new Date().toLocaleString('ja-JP',{hour12:false}),k,f:f||'',r,hid:document.hidden?1:0},why?{why}:{},x||{});if(TM.iv)e.left=tLeft();D.nagiLog=(D.nagiLog||[]).concat([e]).slice(-300);clearTimeout(NG.logT);NG.logT=setTimeout(save,1500);}
+function nagiFin(q,r,why){if(!q||q.fin)return;q.fin=1;clearInterval(q.iv);if(NG.cur===q)NG.cur=null;nagiLog(q.k,q.f,r,why,{t:+q.max.toFixed(1),muted:q.muted?1:0,how:q.how});}
+function nagiOn(){nagiLoad();if(ATHOME)document.body.classList.add('nagi');const i=$('#nimg');if(i&&!i.src)i.src='/nagi/v/kin_stand.jpg';
   const n=$('#nidle');if(n&&!n.src&&ATHOME){n.onended=()=>nagiIdle(1);nagiIdle(0);}}
 function nagiIdle(nx){const n=$('#nidle');if(!n)return;NG.idle=(NG.idle+nx)%NAGI_IDLE.length;n.src='/nagi/v/'+NAGI_IDLE[NG.idle];n.currentTime=0;n.play().catch(()=>{});}   // 毎回立ち姿から＝つなぎ目が飛ばん
-function nagiSay(k){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[0]));if(!nagiCan()||!L||!L.length)return false;
-  const box=$('#nagi'),v=$('#nvid');if(!box||!v)return false;if(box.classList.contains('on')&&Date.now()-(NG.at||0)<20000&&!NAGI_MUST[k])return false;   // 20秒＝動画が読めず止まっても、以後ずっと黙らん
+function nagiSay(k){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[0]));if(!ATHOME||!L.length)return false;
+  if(!nagiCan()){nagiLog(k,'','skip','幅'+NAGI_W);return false;}
+  const box=$('#nagi'),v=$('#nvid');if(!box||!v)return false;nagiLoad();
+  const q=NG.cur;
+  if(q&&NAGI_PRAISE[k]){nagiLog(k,'',NG.wait?'merge':'wait',q.k);if(k==='pr'||NG.wait!=='pr')NG.wait=k;return true;}   // 言葉の途中＝終わってから言う
+  if(q){if(NAGI_PRAISE[q.k]&&k!=='done'&&v.currentTime<4.5&&NG.wait!=='pr')NG.wait=q.k;nagiFin(q,'cut',k);}
+  if(k==='done')NG.wait=null;
   const F=L.length>1?L.filter(x=>x[0]!==NG.lastF):L,c=F[Math.floor(Math.random()*F.length)];   // 前と同じ動画は続けん・残りから等しく選ぶ
-  NG.lastF=c[0];NG.at=Date.now();const tk=++NG.tok,off=()=>{if(tk===NG.tok){nagiIdle(1);box.classList.remove('on');}},note=NAGI_NOTE[k],miss=()=>{if(tk!==NG.tok)return;off();if(note)toast(note);};   // miss＝動画が読めん時も、休憩の知らせは字で必ず出す
-  $('#nsub').textContent=c[1];v.onended=off;v.onerror=miss;   // しゃべり終わり＝立ち姿で終わる→ふだんの動きも立ち姿から
-  v.src='/nagi/v/'+c[0];v.muted=false;v.currentTime=0;box.classList.add('on');
-  // 前は失敗を全部「消音で流し直す」にしとった＝割り込みで前の再生が AbortError になると、次の動画まで消音にしとった。声を断られた時だけ消音で流し、言うて、次に押した所で声を戻す
-  v.play().catch(e=>{if(tk!==NG.tok)return;if(e&&e.name==='AbortError'){v.play().catch(()=>{});return;}if(!e||e.name!=='NotAllowedError'){miss();return;}
-    v.muted=true;v.play().catch(miss);toast((note?note+'。':'')+'凪の声をブラウザが止めた。画面を1回押すと声が出る');
+  NG.lastF=c[0];const tk=++NG.tok,note=NAGI_NOTE[k],me={k,f:c[0],max:0,muted:false,how:NG.blob[c[0]]?'手元':'取り寄せ'};NG.cur=me;
+  const off=r=>{if(tk!==NG.tok||me.fin)return;nagiFin(me,'ok');if(NG.wait){const w=NG.wait;NG.wait=null;nagiSay(w);return;}nagiIdle(1);box.classList.remove('on');},   // しゃべり終わり＝立ち姿で終わる→ふだんの動きも立ち姿から
+    miss=why=>{if(tk!==NG.tok||me.fin)return;nagiFin(me,'fail',why);if(note)toast(note);if(NG.wait){const w=NG.wait;NG.wait=null;nagiSay(w);return;}nagiIdle(1);box.classList.remove('on');};   // 動画が読めん時も、休憩の知らせは字で必ず出す
+  $('#nsub').textContent=c[1];v.onended=off;v.onerror=()=>{if(tk!==NG.tok)return;if(me.retry){miss('読めん');return;}me.retry=1;v.src='/nagi/v/'+c[0];v.play().catch(()=>{});};   // 手元の動画がこけたら1回だけ取り寄せ直す
+  v.src=NG.blob[c[0]]||('/nagi/v/'+c[0]);v.muted=false;v.currentTime=0;box.classList.add('on');
+  // 前は失敗を全部「消音で流し直す」にしとった＝割り込みで前の再生が AbortError になると、次の動画まで消音にしとった。声を断られた時だけ消音で流し、言うて、次に押した所で声を戻す（断られるのは、開いてから一度も押しとらん時だけ）
+  v.play().catch(e=>{if(tk!==NG.tok)return;if(e&&e.name==='AbortError'){v.play().catch(()=>{});return;}if(!e||e.name!=='NotAllowedError'){if(!me.retry)v.onerror();else miss(e&&e.name||'再生できん');return;}
+    me.muted=true;v.muted=true;v.play().catch(()=>miss('消音でも再生できん'));toast((note?note+'。':'')+'凪の声をブラウザが止めた。画面を1回押すと声が出る');
     const un=()=>{removeEventListener('pointerdown',un,true);removeEventListener('keydown',un,true);if(tk===NG.tok)v.muted=false;};addEventListener('pointerdown',un,true);addEventListener('keydown',un,true);});
-  if(note)setTimeout(()=>{if(tk===NG.tok&&!v.ended&&(v.paused||v.readyState<3))toast(note);},3000);   // 読み込みが止まって始まらん時も黙らん
+  // 見張り＝再生が進まん・止まった・おわりの知らせが来ん時も黙って固まらん
+  let last=Date.now(),told=0;me.iv=setInterval(()=>{if(tk!==NG.tok||me.fin){clearInterval(me.iv);return;}const t=v.currentTime;if(t>me.max+.01){me.max=t;last=Date.now();}
+    if(v.duration&&t>=v.duration-.15&&Date.now()-last>800){off();return;}const st=Date.now()-last;
+    if(st>1500&&v.paused&&!v.ended)v.play().catch(()=>{});
+    if(st>3000&&note&&!told){told=1;toast(note);}
+    if(st>8000)miss('止まった');},500);
   return true;}
 nagiOn();
 
@@ -533,16 +551,18 @@ function ex(m){const d=ST.d,e=exById(ST.ex);hdr(e.name,true);
   const checkPR=s=>{const bw=s.w===''||!+s.w;const b=bestSet(e.id,d,bw);const v=score(s,bw);const cur=Math.max(0,...it.sets.filter(x=>x!==s&&x.done).map(x=>score(x,bw)));
     if(b.v>0&&v>b.v&&v>cur){pr={s:{w:s.w,r:s.r},b:b.s,d:b.d};ST.pr=pr;nagiSay('pr');try{navigator.vibrate&&navigator.vibrate(200);}catch(_){}return true;}return false;};
   draw();}
-function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=nagiCan()?null:restSnd(D.rest);TM.p15=D.rest<=15;TM.n20=D.rest<=20;TM.iv=setInterval(()=>{const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
+function startT(){stopT();audioOn();TM.end=Date.now()+D.rest*1000;TM.snd=nagiCan()?null:restSnd(D.rest);TM.p15=D.rest<=15;TM.n20=D.rest<=20;const tick=()=>{if(!TM.iv)return;const l=tLeft();const b=$('#tb');if(b)b.textContent=mmss(l);
   // 音声が途中で止められとったら（ほかの音・端末の都合）、その場で鳴らす音に切り替える＝社長 10/18「2回鳴らすのが効いてない」
   if(TM.snd&&(TM.snd.paused||Math.abs(TM.snd.currentTime-(Date.now()-TM.sndAt)/1000)>1.5)){try{TM.snd.pause();}catch(e){}TM.snd=null;audioOn();}
   if(!TM.p15&&l<=15&&l>0){TM.p15=true;if(!TM.snd&&!nagiCan())beep(1);}
   // 残り20秒の線を越えたら、±15秒で飛んでも1回喋る。伸ばして20秒より上に戻ったら、もう一度喋れる。20秒以下の休憩は0秒の声だけ（社長 11/02）
   if(l>20)TM.n20=false;else if(!TM.n20&&l>0){TM.n20=true;nagiSay('rest20');}
-  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd&&!nagiCan())beep();TM.snd=null;}catch(e){}toast('休憩おわり');nagiSay('restEnd');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}},250);}
+  if(l<=0){stopT();try{navigator.vibrate&&navigator.vibrate([300,100,300]);if(!TM.snd&&!nagiCan())beep();TM.snd=null;}catch(e){}toast('休憩おわり');nagiSay('restEnd');const tb=document.querySelector('.tbar');if(tb)tb.classList.remove('run');const s=$('#ts');if(s)s.textContent='休憩';if(b)b.textContent=mmss(D.rest);}};TM.iv=setInterval(tick,250);
+  // 裏に回す・最小化するとページのタイマーは最大1分に1回まで遅らされる＝別の糸（Worker）からも起こして、20秒と0秒に間に合わせる
+  try{TM.w=new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),250)'])));TM.w.onmessage=tick;}catch(e){}}
 // 休憩中に±15秒した時は、音を残りの時間に合わせて作り直す（15秒前と0秒の音がずれんように）
 function reSnd(){const l=Math.max(0,(TM.end-Date.now())/1000);TM.snd=nagiCan()?null:restSnd(l);TM.p15=l<=15;}
-function stopT(){clearInterval(TM.iv);TM.iv=null;if(TM.snd&&tLeft()>0){try{TM.snd.pause();}catch(e){}TM.snd=null;}}
+function stopT(){clearInterval(TM.iv);TM.iv=null;if(TM.w){TM.w.terminate();TM.w=null;}if(TM.snd&&tLeft()>0){try{TM.snd.pause();}catch(e){}TM.snd=null;}}
 let AC=null;function audioOn(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}}
 // 休憩の音は「無音＋最後にピピピ」の音声ファイルを✓を押した瞬間に流し始める
 // ＝iPhoneのマナーモードでも鳴る（Web Audioは消音スイッチで消える）・画面を消しても鳴る（タイマーの処理は止まるが音声は流れ続ける）
