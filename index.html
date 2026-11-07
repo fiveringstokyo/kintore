@@ -41,7 +41,10 @@ input{font:inherit}
 #nagi video{opacity:0;transition:opacity .25s}#nagi.on video{opacity:1}#nagi #nidle{opacity:1;transition:none}
 #nsub{position:absolute;left:8px;right:8px;bottom:14px;text-align:center;color:#fff;font-size:18px;line-height:1.5;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s}
 #nagi.on #nsub{opacity:1}
-@media (min-width:1000px){body.nagi #nagi{display:block}body.nagi #formv{width:calc(100vw - 440px - var(--nw))}}
+/* 凪の応援のオン/オフ（社長 11/07「オフのときは確実に音声もオフ」）＝本社のパソコン幅だけ・右上にずっと出す。オフは localStorage に残る */
+#nsw{display:none;position:fixed;top:8px;right:8px;z-index:60;border:0;border-radius:16px;padding:6px 12px;font:600 13px system-ui;background:#2a3142;color:#fff;opacity:.9;cursor:pointer}
+#nsw.off{background:#e5e7eb;color:#555}
+@media (min-width:1000px){body.athome #nsw{display:block}body.nagi #nagi{display:block}body.nagi #formv{width:calc(100vw - 440px - var(--nw))}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
 header h1{flex:1;margin:0;font-size:18px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .hb{min-width:72px;min-height:44px;font-size:15px;color:#fff;padding:0 8px;display:flex;align-items:center}
@@ -182,6 +185,7 @@ svg.g{width:100%;height:170px}
 </div>
 <aside id="formv"><div id="fel"><small id="fels"></small><b id="felv"></b></div><img id="fimg" alt=""><div id="fmus"><div id="fmush"></div><div id="fmusb"></div></div><div class="fm" id="fmsg"></div></aside>
 <div id="nagi"><img id="nimg" alt="凪"><video id="nidle" muted playsinline preload="auto"></video><video id="nvid" playsinline preload="auto"></video><div id="nsub"></div></div>
+<button id="nsw" title="凪の応援（動画・声・字幕）を出すか"></button>
 <div id="toast"></div>
 <script>
 'use strict';
@@ -409,18 +413,19 @@ const NAGI_IDLE=['kin_idle1.mp4','kin_idle2.mp4'];   // ふだんの動き（汗
 const NAGI_PRAISE={otsukare:1,pr:1};
 const NAGI_NOTE={rest20:'あと20秒',restEnd:'休憩おわり'};   // 声が出せん時に字で出す言葉
 let NAGI_W=innerWidth;   // 最小化すると幅が0になることがある＝見えとる時の幅で決める
-const nagiCan=()=>{if(!document.hidden&&innerWidth>0)NAGI_W=innerWidth;return ATHOME&&NAGI_W>=1000;};   // 凪が喋れる画面＝ここでは休憩の音を鳴らさん。スマホ幅など凪が出ん画面は代わりが無いので音のまま
+const nagiCan=()=>{if(!document.hidden&&innerWidth>0)NAGI_W=innerWidth;return !NAGI_OFF&&ATHOME&&NAGI_W>=1000;};   // 凪が喋れる画面＝ここでは休憩の音を鳴らさん。スマホ幅など凪が出ん画面は代わりが無いので音のまま
+let NAGI_OFF=localStorage.getItem('kintore_nagi_off')==='1';   // 凪の応援を切っとる＝喋らん・立ち姿も出さん（休憩の知らせは凪が出ん画面と同じく音に戻る）
 const NG={lastF:'',idle:0,tok:0,blob:{},cur:null,wait:null,logT:0};
 // 動画は先に全部手元へ＝言う瞬間にサーバーが再起動中・混んどっても止まらん（配信は保存なし・毎回取り直しやった）
 async function nagiLoad(){if(NG.loading||!nagiCan())return;NG.loading=1;for(const k in NAGI_CLIPS)for(const x of NAGI_CLIPS[k]){if(NG.blob[x[0]])continue;try{const r=await fetch('/nagi/v/'+x[0]);if(r.ok)NG.blob[x[0]]=URL.createObjectURL(await r.blob());}catch(e){}}NG.loading=0;}
 // 節目ごとの記録＝D.nagiLog に入り、最新.json で専属コーチが読める。r＝ok喋った／cut途中で切られた／wait順番待ち／merge順番待ちと一つにした／fail声が出せず字だけ／skip喋らん画面
 function nagiLog(k,f,r,why,x){const e=Object.assign({at:new Date().toLocaleString('ja-JP',{hour12:false}),k,f:f||'',r,hid:document.hidden?1:0},why?{why}:{},x||{});if(TM.iv)e.left=tLeft();D.nagiLog=(D.nagiLog||[]).concat([e]).slice(-300);clearTimeout(NG.logT);NG.logT=setTimeout(save,1500);}
 function nagiFin(q,r,why){if(!q||q.fin)return;q.fin=1;clearInterval(q.iv);if(NG.cur===q)NG.cur=null;nagiLog(q.k,q.f,r,why,{t:+q.max.toFixed(1),muted:q.muted?1:0,how:q.how});}
-function nagiOn(){nagiLoad();if(ATHOME)document.body.classList.add('nagi');const i=$('#nimg');if(i&&!i.src)i.src='/nagi/v/kin_stand.jpg';
+function nagiOn(){if(NAGI_OFF)return;nagiLoad();if(ATHOME)document.body.classList.add('nagi');const i=$('#nimg');if(i&&!i.src)i.src='/nagi/v/kin_stand.jpg';
   const n=$('#nidle');if(n&&!n.src&&ATHOME){n.onended=()=>nagiIdle(1);nagiIdle(0);}}
 function nagiIdle(nx){const n=$('#nidle');if(!n)return;NG.idle=(NG.idle+nx)%NAGI_IDLE.length;n.src='/nagi/v/'+NAGI_IDLE[NG.idle];n.currentTime=0;n.play().catch(()=>{});}   // 毎回立ち姿から＝つなぎ目が飛ばん
 function nagiSay(k){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[0]));if(!ATHOME||!L.length)return false;
-  if(!nagiCan()){nagiLog(k,'','skip','幅'+NAGI_W);return false;}
+  if(!nagiCan()){nagiLog(k,'','skip',NAGI_OFF?'オフ':'幅'+NAGI_W);return false;}
   const box=$('#nagi'),v=$('#nvid');if(!box||!v)return false;nagiLoad();
   const q=NG.cur;
   if(q&&NAGI_PRAISE[k]){nagiLog(k,'',NG.wait?'merge':'wait',q.k);if(k==='pr'||NG.wait!=='pr')NG.wait=k;return true;}   // 言葉の途中＝終わってから言う
@@ -443,7 +448,17 @@ function nagiSay(k){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[
     if(st>3000&&note&&!told){told=1;toast(note);}
     if(st>8000)miss('止まった');},500);
   return true;}
-nagiOn();
+// 切る時＝鳴っとる途中の声もその場で止め、ふだんの動きも止めて隠す（音の出る物を何も残さん）
+function nagiStop(){NG.tok++;if(NG.cur)nagiFin(NG.cur,'cut','オフ');NG.wait=null;
+  for(const v of [$('#nvid'),$('#nidle')]){if(!v)continue;v.onended=null;v.pause();v.muted=true;v.removeAttribute('src');v.load();}
+  const box=$('#nagi');if(box)box.classList.remove('on');if($('#nsub'))$('#nsub').textContent='';document.body.classList.remove('nagi');}
+function nagiSw(){const b=$('#nsw');if(b){b.textContent=NAGI_OFF?'凪の応援 オフ':'凪の応援 オン';b.classList.toggle('off',NAGI_OFF);}}
+if(ATHOME)document.body.classList.add('athome');
+if($('#nsw'))$('#nsw').onclick=()=>{NAGI_OFF=!NAGI_OFF;try{localStorage.setItem('kintore_nagi_off',NAGI_OFF?'1':'0');}catch(e){}
+  if(NAGI_OFF)nagiStop();else nagiOn();
+  if(TM.iv){if(TM.snd){try{TM.snd.pause();}catch(e){}TM.snd=null;}reSnd();}   // 休憩中に切り替えた＝残りの知らせを凪か音のどっちかに付け替える
+  nagiSw();toast(NAGI_OFF?'凪の応援を切った':'凪の応援を入れた');};
+nagiSw();nagiOn();
 
 // ===== その日の記録 =====
 function day(m){const d=ST.d;hdr(dTitle(d),true);const L=D.days[d]||[];
