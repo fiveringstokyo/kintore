@@ -36,9 +36,11 @@ export function hits(e,norm){const n=norm(e.name);for(const [k,v] of MAP)if(n.in
 // 日が経った分だけ冷ます＝その日のセット数×0.5^(経った日数÷4)
 export function tally(D,R,norm,now){const t={},by={};for(const k in MUS){t[k]=0;by[k]={};}
   const z=now?new Date(now):new Date(),t0=Date.UTC(z.getFullYear(),z.getMonth(),z.getDate());
+  // 今日は✓を押したセットだけ（開いただけで前回の数字が入ったセットは数えん・社長 11/26）。前の日は✓の押し忘れが多いので回数が入っとれば数える
+  const td=new Date(t0).toISOString().slice(0,10);
   for(const d in D.days){if(R&&d<R.d)continue;const age=Math.max(0,Math.round((t0-Date.UTC(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)))/864e5)),f=Math.pow(.5,age/HALF);
     for(const x of D.days[d]){const e=D.ex.find(y=>y.id===x.ex);if(!e)continue;
-    let n=x.sets.filter(s=>+s.r>0).length;if(R&&d===R.d)n-=((R.base||{})[x.ex]||0);if(n<=0)continue;n*=f;const h=hits(e,norm);
+    let n=x.sets.filter(s=>+s.r>0&&(d!==td||s.done)).length;if(R&&d===R.d)n-=((R.base||{})[x.ex]||0);if(n<=0)continue;n*=f;const h=hits(e,norm);
     for(const k in h){t[k]+=n*h[k];by[k][e.name]=(by[k][e.name]||0)+n*h[k];}}}
   return {t,by};}
 

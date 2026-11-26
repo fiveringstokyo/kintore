@@ -627,7 +627,7 @@ function musBig(){const b=$('#fmus');if(!b)return;const on=ST.v==='pick'&&innerW
 // ===== 筋肉マップ（正面・背面の平面図。リセットしてから鍛えた筋肉が赤くなる・中身は muscle.js） =====
 // リセット＝その時点を0にする。その日にもう入っとるセットは数えん（D.musR.base）・同期は新しい方（at）が勝つ
 function musReset(){if(!confirm('筋肉の温度を全部青（0）に戻す？（トレーニングの記録は消えん）'))return;const d=today(),base={};
-  (D.days[d]||[]).forEach(x=>{base[x.ex]=x.sets.filter(s=>+s.r>0).length;});D.musR={d:d,at:Date.now(),base:base};save();toast('筋肉の温度をリセットした');render();}
+  (D.days[d]||[]).forEach(x=>{base[x.ex]=x.sets.filter(s=>+s.r>0&&s.done).length;});D.musR={d:d,at:Date.now(),base:base};save();toast('筋肉の温度をリセットした');render();}
 function musV(m,html){const R=D.musR;
   m.innerHTML=html+`<div class="hcal" style="padding-bottom:4px"><div class="mh" style="padding:6px 12px"><span>${R?`${+R.d.slice(0,4)}年${+R.d.slice(5,7)}月${+R.d.slice(8)}日から（日が経つと冷める＝4日で半分）`:'日が経つと冷める＝4日で半分'}</span><button id="mr" style="width:auto;height:auto;font-size:14px;padding:6px 14px;border:1px solid var(--r);border-radius:16px">リセット</button></div></div>
    <div style="background:#fff;margin:0 10px;border-radius:10px;padding:8px 6px 4px"><div id="m3t" style="text-align:center;font-weight:700;min-height:22px">読み込み中…</div><div id="m3"></div></div>
