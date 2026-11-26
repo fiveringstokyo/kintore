@@ -42,8 +42,9 @@ input{font:inherit}
 #nsub{position:absolute;left:8px;right:8px;bottom:14px;text-align:center;color:#fff;font-size:18px;line-height:1.5;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s}
 #nagi.on #nsub{opacity:1}
 /* 凪の応援のオン/オフ（社長 11/07「オフのときは確実に音声もオフ」）＝本社のパソコン幅だけ・右上にずっと出す。オフは localStorage に残る */
-#nsw{display:none;position:fixed;top:8px;right:8px;z-index:60;border:0;border-radius:16px;padding:6px 12px;font:600 13px system-ui;background:#2a3142;color:#fff;opacity:.9;cursor:pointer}
-#nsw.off{background:#e5e7eb;color:#555}
+#nsw{display:none;position:fixed;top:8px;right:8px;z-index:60;border:0;border-radius:50%;width:40px;height:40px;padding:0;font:20px/40px system-ui;text-align:center;background:#2a3142;opacity:.9;cursor:pointer}
+#nsw.off{background:#e5e7eb;filter:grayscale(1);opacity:.6}
+#nsw.off::after{content:'';position:absolute;left:7px;right:7px;top:50%;height:2px;background:#555;transform:rotate(-45deg)}   /* メガホンの印だけ（社長 11/26「文字不要」）＝オフは灰色＋斜めの線 */
 @media (min-width:1000px){body.athome #nsw{display:block}body.nagi #nagi{display:block}body.nagi #formv{width:calc(100vw - 440px - var(--nw))}}
 header{background:var(--r);color:#fff;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;display:flex;align-items:center;gap:4px;min-height:52px}
 header h1{flex:1;margin:0;font-size:18px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -452,7 +453,7 @@ function nagiSay(k){const L=(NAGI_CLIPS[k]||[]).filter(x=>!NAGI_MADA.includes(x[
 function nagiStop(){NG.tok++;if(NG.cur)nagiFin(NG.cur,'cut','オフ');NG.wait=null;
   for(const v of [$('#nvid'),$('#nidle')]){if(!v)continue;v.onended=null;v.pause();v.muted=true;v.removeAttribute('src');v.load();}
   const box=$('#nagi');if(box)box.classList.remove('on');if($('#nsub'))$('#nsub').textContent='';document.body.classList.remove('nagi');}
-function nagiSw(){const b=$('#nsw');if(b){b.textContent=NAGI_OFF?'凪の応援 オフ':'凪の応援 オン';b.classList.toggle('off',NAGI_OFF);}}
+function nagiSw(){const b=$('#nsw');if(b){b.textContent='📣';b.title=NAGI_OFF?'凪の応援 オフ（押すとオン）':'凪の応援 オン（押すとオフ）';b.classList.toggle('off',NAGI_OFF);}}
 if(ATHOME)document.body.classList.add('athome');
 if($('#nsw'))$('#nsw').onclick=()=>{NAGI_OFF=!NAGI_OFF;try{localStorage.setItem('kintore_nagi_off',NAGI_OFF?'1':'0');}catch(e){}
   if(NAGI_OFF)nagiStop();else nagiOn();
